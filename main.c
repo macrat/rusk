@@ -7,6 +7,7 @@
 #define FAVICONDIR	"/mnt/tmpfs/"
 
 #define SCROLL_STEP	24
+#define ZOOM_STEP	0.1
 
 
 typedef struct {
@@ -82,6 +83,19 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				break;
 			case GDK_KEY_L:
 				scroll(rusk, 0, SCROLL_STEP);
+				proceed = TRUE;
+				break;
+
+			case GDK_KEY_plus:
+				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)+ZOOM_STEP);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_minus:
+				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)-ZOOM_STEP);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_0:
+				webkit_web_view_set_zoom_level(rusk->webview, 1.0);
 				proceed = TRUE;
 				break;
 		}
