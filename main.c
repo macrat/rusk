@@ -35,11 +35,11 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 	switch(event)
 	{
 		case WEBKIT_LOAD_STARTED:
-			gtk_widget_show(GTK_WIDGET(rusk->progressbar));
+			gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), TRUE);
 			break;
 
 		case WEBKIT_LOAD_FINISHED:
-			gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
+			gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), FALSE);
 			break;
 	}
 }
@@ -244,7 +244,7 @@ int makeWindow(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
-	gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
+	gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), FALSE);
 	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
