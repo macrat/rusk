@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -195,6 +197,27 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	return proceed;
 }
 
+void openURI(RuskWindow *rusk, const char *uri)
+{
+	char *buf, *realURI;
+
+	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
+	{
+		buf = realpath(uri, NULL);
+		realURI = g_strdup_printf("file://%s", buf);
+		free(buf);
+	}else if(strstr(uri, "://"))
+	{
+		realURI = g_strdup(uri);
+	}else
+	{
+		realURI = g_strdup_printf("http://%s", uri);
+	}
+
+	webkit_web_view_load_uri(rusk->webview, realURI);
+	g_free(realURI);
+}
+
 int setupWebView(RuskWindow *rusk)
 {
 	WebKitCookieManager *cookieManager;
@@ -262,7 +285,7 @@ int main(int argc, char **argv)
 	if(setupWebView(&rusk) != 0)
 		return -1;
 
-	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(rusk.webview), "http://google.com/");  /* debug */
+	openURI(&rusk, "google.com");  /* debug */
 
 	gtk_main();
 
