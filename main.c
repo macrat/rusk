@@ -21,13 +21,20 @@ void onChangeProgress(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk
 {
 	const gdouble progress = webkit_web_view_get_estimated_load_progress(rusk->webview);
 
-	if(progress == 1.0)
+	gtk_progress_bar_set_fraction(rusk->progressbar, progress);
+}
+
+void onChangeLoad(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
+{
+	switch(event)
 	{
-		gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
-	}else
-	{
-		gtk_widget_show(GTK_WIDGET(rusk->progressbar));
-		gtk_progress_bar_set_fraction(rusk->progressbar, progress);
+		case WEBKIT_LOAD_STARTED:
+			gtk_widget_show(GTK_WIDGET(rusk->progressbar));
+			break;
+
+		case WEBKIT_LOAD_FINISHED:
+			gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
+			break;
 	}
 }
 
@@ -43,6 +50,7 @@ int setupWebView(RuskWindow *rusk)
 
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onChangeTitle), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onChangeProgress), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onChangeLoad), rusk);
 
 	return 0;
 }
