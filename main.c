@@ -96,19 +96,13 @@ void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk
 	GdkPixbuf *pixbuf;
 
 	if((favicon = webkit_web_view_get_favicon(rusk->webview)) == NULL)
-	{
-		gtk_window_set_icon_name(rusk->window, "browser");
 		return;
-	}
 
 	width = cairo_image_surface_get_width(favicon);
 	height = cairo_image_surface_get_height(favicon);
 
 	if(width <= 0 || height <= 0)
-	{
-		gtk_window_set_icon_name(rusk->window, "browser");
 		return;
-	}
 
 	pixbuf = gdk_pixbuf_get_from_surface(favicon, 0, 0, width, height);
 
