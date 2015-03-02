@@ -2,13 +2,13 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
+
 GtkWidget *g_webview;
 
-int main(int argc, char **argv)
+
+int makeWindow()
 {
 	GtkWidget *window, *box, *scrolled;
-
-	gtk_init(&argc, &argv);
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
@@ -25,6 +25,14 @@ int main(int argc, char **argv)
 
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(window);
+}
+
+int main(int argc, char **argv)
+{
+	gtk_init(&argc, &argv);
+
+	makeWindow();
+
 	gtk_main();
 
 	return 0;
