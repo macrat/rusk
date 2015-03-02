@@ -132,7 +132,7 @@ void inSiteSearchPrev(RuskWindow *rusk)
 
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
-	gboolean proceed = FALSE;
+	gboolean proceed = TRUE;
 
 	if(key->state & GDK_CONTROL_MASK)
 	{
@@ -140,64 +140,58 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 		{
 			case GDK_KEY_B:
 				webkit_web_view_go_back(rusk->webview);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_F:
 				webkit_web_view_go_forward(rusk->webview);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_R:
 				if(key->state & GDK_SHIFT_MASK)
 					webkit_web_view_reload_bypass_cache(rusk->webview);
 				else
 					webkit_web_view_reload(rusk->webview);
-				proceed = TRUE;
 				break;
 
 			case GDK_KEY_H:
 				scroll(rusk, 0, -SCROLL_STEP);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_J:
 				scroll(rusk, SCROLL_STEP, 0);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_K:
 				scroll(rusk, -SCROLL_STEP, 0);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_L:
 				scroll(rusk, 0, SCROLL_STEP);
-				proceed = TRUE;
 				break;
 
 			case GDK_KEY_plus:
 				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)+ZOOM_STEP);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_minus:
 				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)-ZOOM_STEP);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_0:
 				webkit_web_view_set_zoom_level(rusk->webview, 1.0);
-				proceed = TRUE;
 				break;
 
 			case GDK_KEY_G:
 				inSiteSearchToggle(rusk);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_N:
 				inSiteSearchNext(rusk);
-				proceed = TRUE;
 				break;
 			case GDK_KEY_P:
 				inSiteSearchPrev(rusk);
-				proceed = TRUE;
 				break;
+
+			default:
+				proceed = FALSE;
 		}
+	}else
+	{
+		proceed = FALSE;
 	}
+
 	return proceed;
 }
 
