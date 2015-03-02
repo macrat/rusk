@@ -6,6 +6,9 @@
 #define COOKIEPATH	"./cookie.txt"
 #define FAVICONDIR	"/mnt/tmpfs/"
 
+#define SCROLL_STEP	24
+
+
 typedef struct {
 	WebKitWebView *webview;
 	GtkWindow *window;
@@ -40,6 +43,15 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 	}
 }
 
+void scroll(RuskWindow *rusk, const int vertical, const int horizonal)
+{
+	char script[1024];
+
+	snprintf(script, sizeof(script), "window.scrollBy(%d,%d)", horizonal, vertical);
+
+	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = FALSE;
@@ -54,6 +66,23 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				break;
 			case GDK_KEY_F:
 				webkit_web_view_go_forward(rusk->webview);
+				proceed = TRUE;
+				break;
+
+			case GDK_KEY_H:
+				scroll(rusk, 0, -SCROLL_STEP);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_J:
+				scroll(rusk, SCROLL_STEP, 0);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_K:
+				scroll(rusk, -SCROLL_STEP, 0);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_L:
+				scroll(rusk, 0, SCROLL_STEP);
 				proceed = TRUE;
 				break;
 		}
@@ -112,7 +141,7 @@ int setupWebView(RuskWindow *rusk)
 
 int makeWindow(RuskWindow *rusk)
 {
-	GtkWidget *box, *scrolled;
+	GtkWidget *box;
 
 	if((rusk->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL))) == NULL)
 		return -1;
@@ -123,11 +152,8 @@ int makeWindow(RuskWindow *rusk)
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->progressbar), FALSE, FALSE, 0);
 
-	scrolled = gtk_scrolled_window_new(NULL, NULL);
-	gtk_box_pack_start(GTK_BOX(box), scrolled, TRUE, TRUE, 0);
-
 	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
-	gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(rusk->webview));
+	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->webview), TRUE, TRUE, 0);
 
 	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
