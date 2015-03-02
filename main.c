@@ -11,20 +11,20 @@ typedef struct {
 } RuskWindow;
 
 
-void onChangeTitle(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
+void onTitleChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
 {
 	const gchar *title = webkit_web_view_get_title(rusk->webview);
 	gtk_window_set_title(rusk->window, title);
 }
 
-void onChangeProgress(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk)
+void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk)
 {
 	const gdouble progress = webkit_web_view_get_estimated_load_progress(rusk->webview);
 
 	gtk_progress_bar_set_fraction(rusk->progressbar, progress);
 }
 
-void onChangeLoad(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
+void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
 {
 	switch(event)
 	{
@@ -48,9 +48,9 @@ int setupWebView(RuskWindow *rusk)
 
 	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
 
-	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onChangeTitle), rusk);
-	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onChangeProgress), rusk);
-	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onChangeLoad), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onTitleChange), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onProgressChange), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onLoadChange), rusk);
 
 	return 0;
 }
