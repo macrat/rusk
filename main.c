@@ -21,8 +21,6 @@ int makeWindow()
 	g_webview = webkit_web_view_new();
 	gtk_container_add(GTK_CONTAINER(scrolled), g_webview);
 
-	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(g_webview), "http://google.com/");
-
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(window);
 }
@@ -32,6 +30,8 @@ int main(int argc, char **argv)
 	gtk_init(&argc, &argv);
 
 	makeWindow();
+
+	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(g_webview), "http://google.com/");  /* debug */
 
 	gtk_main();
 
