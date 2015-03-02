@@ -113,10 +113,6 @@ void inSiteSearchToggle(RuskWindow *rusk)
 		WebKitFindController *finder = webkit_web_view_get_find_controller(rusk->webview);
 		runInSiteSearch(rusk, webkit_find_controller_get_search_text(finder), TRUE);
 	}else
-	if(gtk_window_get_focus(rusk->window) == GTK_WIDGET(rusk->insiteSearch))
-	{
-		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
-	}else
 	{
 		webkit_find_controller_search_finish(webkit_web_view_get_find_controller(rusk->webview));
 		gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
