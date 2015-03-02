@@ -16,9 +16,31 @@ typedef struct {
 	WebKitWebView *webview;
 	GtkWindow *window;
 	GtkEntry *insiteSearch;
+	GtkEntry *addressbar;
 	GtkProgressBar *progressbar;
 } RuskWindow;
 
+
+void openURI(RuskWindow *rusk, const char *uri)
+{
+	char *buf, *realURI;
+
+	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
+	{
+		buf = realpath(uri, NULL);
+		realURI = g_strdup_printf("file://%s", buf);
+		free(buf);
+	}else if(strstr(uri, "://"))
+	{
+		realURI = g_strdup(uri);
+	}else
+	{
+		realURI = g_strdup_printf("http://%s", uri);
+	}
+
+	webkit_web_view_load_uri(rusk->webview, realURI);
+	g_free(realURI);
+}
 
 void onTitleChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
 {
@@ -132,6 +154,29 @@ void inSiteSearchPrev(RuskWindow *rusk)
 	webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
 }
 
+void addressbarToggle(RuskWindow *rusk)
+{
+	if(!gtk_widget_is_visible(GTK_WIDGET(rusk->addressbar)))
+	{
+		gtk_entry_set_text(rusk->addressbar, webkit_web_view_get_uri(rusk->webview));
+		gtk_widget_set_visible(GTK_WIDGET(rusk->addressbar), TRUE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->addressbar));
+	}else
+	{
+		gtk_widget_set_visible(GTK_WIDGET(rusk->addressbar), FALSE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+	}
+}
+
+gboolean onAddressbarInput(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
+{
+	if(key->keyval == GDK_KEY_Return)
+	{
+		openURI(rusk, gtk_entry_get_text(rusk->addressbar));
+		addressbarToggle(rusk);
+	}
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
@@ -186,6 +231,10 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				inSiteSearchPrev(rusk);
 				break;
 
+			case GDK_KEY_U:
+				addressbarToggle(rusk);
+				break;
+
 			default:
 				proceed = FALSE;
 		}
@@ -195,27 +244,6 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	}
 
 	return proceed;
-}
-
-void openURI(RuskWindow *rusk, const char *uri)
-{
-	char *buf, *realURI;
-
-	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
-	{
-		buf = realpath(uri, NULL);
-		realURI = g_strdup_printf("file://%s", buf);
-		free(buf);
-	}else if(strstr(uri, "://"))
-	{
-		realURI = g_strdup(uri);
-	}else
-	{
-		realURI = g_strdup_printf("http://%s", uri);
-	}
-
-	webkit_web_view_load_uri(rusk->webview, realURI);
-	g_free(realURI);
 }
 
 int setupWebView(RuskWindow *rusk)
@@ -252,6 +280,9 @@ int makeWindow(RuskWindow *rusk)
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(rusk->window), box);
 
+	rusk->addressbar = GTK_ENTRY(gtk_entry_new());
+	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->addressbar), FALSE, FALSE, 0);
+
 	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
 
@@ -264,11 +295,13 @@ int makeWindow(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
+	gtk_widget_set_visible(GTK_WIDGET(rusk->addressbar), FALSE);
 	gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), FALSE);
 	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
 	g_signal_connect(G_OBJECT(rusk->insiteSearch), "key-release-event", G_CALLBACK(onInSiteSearchInput), rusk);
+	g_signal_connect(G_OBJECT(rusk->addressbar), "key-release-event", G_CALLBACK(onAddressbarInput), rusk);
 
 	return 0;
 }
