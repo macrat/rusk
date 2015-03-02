@@ -146,6 +146,13 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				webkit_web_view_go_forward(rusk->webview);
 				proceed = TRUE;
 				break;
+			case GDK_KEY_R:
+				if(key->state & GDK_SHIFT_MASK)
+					webkit_web_view_reload_bypass_cache(rusk->webview);
+				else
+					webkit_web_view_reload(rusk->webview);
+				proceed = TRUE;
+				break;
 
 			case GDK_KEY_H:
 				scroll(rusk, 0, -SCROLL_STEP);
