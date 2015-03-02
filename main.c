@@ -234,7 +234,6 @@ int makeWindow(RuskWindow *rusk)
 
 	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
-	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->progressbar), FALSE, FALSE, 0);
@@ -246,6 +245,7 @@ int makeWindow(RuskWindow *rusk)
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
 	gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
+	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
 	g_signal_connect(G_OBJECT(rusk->insiteSearch), "key-release-event", G_CALLBACK(onInSiteSearchInput), rusk);
