@@ -4,7 +4,10 @@
 
 #define COOKIEPATH "./cookie.txt"
 
-GtkWidget *g_webview;
+typedef struct {
+	WebKitWebView *webview;
+	GtkWindow *window;
+} RuskWindow;
 
 
 int setupWebView()
@@ -20,39 +23,41 @@ int setupWebView()
 	return 0;
 }
 
-int makeWindow()
+int makeWindow(RuskWindow *rusk)
 {
-	GtkWidget *window, *box, *scrolled;
+	GtkWidget *box, *scrolled;
 
-	if((window = gtk_window_new(GTK_WINDOW_TOPLEVEL)) == NULL)
+	if((rusk->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL))) == NULL)
 		return -1;
 
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_add(GTK_CONTAINER(window), box);
+	gtk_container_add(GTK_CONTAINER(rusk->window), box);
 
 	scrolled = gtk_scrolled_window_new(NULL, NULL);
 	gtk_box_pack_start(GTK_BOX(box), scrolled, TRUE, TRUE, 0);
 
-	g_webview = webkit_web_view_new();
-	gtk_container_add(GTK_CONTAINER(scrolled), g_webview);
+	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+	gtk_container_add(GTK_CONTAINER(scrolled), GTK_WIDGET(rusk->webview));
 
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
-	gtk_widget_show_all(window);
+	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
+	RuskWindow rusk;
+
 	gtk_init(&argc, &argv);
 
-	if(makeWindow() != 0)
+	if(makeWindow(&rusk) != 0)
 		return -1;
 
 	if(setupWebView() != 0)
 		return -1;
 
-	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(g_webview), "http://google.com/");  /* debug */
+	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(rusk.webview), "http://google.com/");  /* debug */
 
 	gtk_main();
 
