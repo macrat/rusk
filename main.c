@@ -18,8 +18,7 @@ typedef struct {
 
 void onTitleChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
 {
-	const gchar *title = webkit_web_view_get_title(rusk->webview);
-	gtk_window_set_title(rusk->window, title);
+	gtk_window_set_title(rusk->window, webkit_web_view_get_title(rusk->webview));
 }
 
 void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk)
@@ -116,6 +115,14 @@ void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk
 	gtk_window_set_icon(rusk->window, pixbuf);
 }
 
+void onLinkHover(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
+{
+	if(webkit_hit_test_result_context_is_link(hitTest))
+		gtk_window_set_title(rusk->window, webkit_hit_test_result_get_link_uri(hitTest));
+	else
+		gtk_window_set_title(rusk->window, webkit_web_view_get_title(rusk->webview));
+}
+
 int setupWebView(RuskWindow *rusk)
 {
 	WebKitCookieManager *cookieManager;
@@ -135,6 +142,7 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onProgressChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onLoadChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::favicon", G_CALLBACK(onFaviconChange), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "mouse-target-changed", G_CALLBACK(onLinkHover), rusk);
 
 	return 0;
 }
