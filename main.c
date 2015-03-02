@@ -12,6 +12,8 @@ int setupWebView()
 	WebKitCookieManager *cookieManager;
 
 	cookieManager = webkit_web_context_get_cookie_manager(webkit_web_context_get_default());
+	if(cookieManager == NULL)
+		return -1;
 
 	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
 
@@ -22,7 +24,8 @@ int makeWindow()
 {
 	GtkWidget *window, *box, *scrolled;
 
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	if((window = gtk_window_new(GTK_WINDOW_TOPLEVEL)) == NULL)
+		return -1;
 
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), box);
@@ -43,8 +46,11 @@ int main(int argc, char **argv)
 {
 	gtk_init(&argc, &argv);
 
-	makeWindow();
-	setupWebView();
+	if(makeWindow() != 0)
+		return -1;
+
+	if(setupWebView() != 0)
+		return -1;
 
 	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(g_webview), "http://google.com/");  /* debug */
 
