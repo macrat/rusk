@@ -3,7 +3,8 @@
 #include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
 
-#define COOKIEPATH "./cookie.txt"
+#define COOKIEPATH	"./cookie.txt"
+#define FAVICONDIR	"/mnt/tmpfs/"
 
 typedef struct {
 	WebKitWebView *webview;
@@ -60,19 +61,51 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	return proceed;
 }
 
+void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
+{
+	cairo_surface_t *favicon;
+	int width, height;
+	GdkPixbuf *pixbuf;
+
+	if((favicon = webkit_web_view_get_favicon(rusk->webview)) == NULL)
+	{
+		gtk_window_set_icon_name(rusk->window, "browser");
+		return;
+	}
+
+	width = cairo_image_surface_get_width(favicon);
+	height = cairo_image_surface_get_height(favicon);
+
+	if(width <= 0 || height <= 0)
+	{
+		gtk_window_set_icon_name(rusk->window, "browser");
+		return;
+	}
+
+	pixbuf = gdk_pixbuf_get_from_surface(favicon, 0, 0, width, height);
+
+	gtk_window_set_icon(rusk->window, pixbuf);
+}
+
 int setupWebView(RuskWindow *rusk)
 {
 	WebKitCookieManager *cookieManager;
+	WebKitWebContext *context;
 
-	cookieManager = webkit_web_context_get_cookie_manager(webkit_web_context_get_default());
+	context = webkit_web_context_get_default();
+
+	cookieManager = webkit_web_context_get_cookie_manager(context);
 	if(cookieManager == NULL)
 		return -1;
 
 	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
 
+	webkit_web_context_set_favicon_database_directory(context, FAVICONDIR);
+
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onTitleChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onProgressChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onLoadChange), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "notify::favicon", G_CALLBACK(onFaviconChange), rusk);
 
 	return 0;
 }
