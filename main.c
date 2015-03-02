@@ -23,6 +23,8 @@ int makeWindow()
 
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	gtk_widget_show_all(window);
+
+	return 0;
 }
 
 int main(int argc, char **argv)
