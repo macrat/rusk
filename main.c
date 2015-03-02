@@ -2,9 +2,21 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
+#define COOKIEPATH "./cookie.txt"
 
 GtkWidget *g_webview;
 
+
+int setupWebView()
+{
+	WebKitCookieManager *cookieManager;
+
+	cookieManager = webkit_web_context_get_cookie_manager(webkit_web_context_get_default());
+
+	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
+
+	return 0;
+}
 
 int makeWindow()
 {
@@ -32,6 +44,7 @@ int main(int argc, char **argv)
 	gtk_init(&argc, &argv);
 
 	makeWindow();
+	setupWebView();
 
 	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(g_webview), "http://google.com/");  /* debug */
 
