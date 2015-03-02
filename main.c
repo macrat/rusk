@@ -13,6 +13,7 @@
 typedef struct {
 	WebKitWebView *webview;
 	GtkWindow *window;
+	GtkEntry *insiteSearch;
 	GtkProgressBar *progressbar;
 } RuskWindow;
 
@@ -50,6 +51,87 @@ void scroll(RuskWindow *rusk, const int vertical, const int horizonal)
 	snprintf(script, sizeof(script), "window.scrollBy(%d,%d)", horizonal, vertical);
 
 	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
+}
+
+void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
+{
+	cairo_surface_t *favicon;
+	int width, height;
+	GdkPixbuf *pixbuf;
+
+	if((favicon = webkit_web_view_get_favicon(rusk->webview)) == NULL)
+		return;
+
+	width = cairo_image_surface_get_width(favicon);
+	height = cairo_image_surface_get_height(favicon);
+
+	if(width <= 0 || height <= 0)
+		return;
+
+	pixbuf = gdk_pixbuf_get_from_surface(favicon, 0, 0, width, height);
+
+	gtk_window_set_icon(rusk->window, pixbuf);
+}
+
+void onLinkHover(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
+{
+	if(webkit_hit_test_result_context_is_link(hitTest))
+		gtk_window_set_title(rusk->window, webkit_hit_test_result_get_link_uri(hitTest));
+	else
+		gtk_window_set_title(rusk->window, webkit_web_view_get_title(rusk->webview));
+}
+
+void runInSiteSearch(RuskWindow *rusk, const char *query, const int force)
+{
+	WebKitFindController *finder = webkit_web_view_get_find_controller(rusk->webview);
+	const char *oldquery = webkit_find_controller_get_search_text(finder);
+
+	if(query && (oldquery == NULL || strcmp(query, oldquery) != 0 || force))
+		webkit_find_controller_search(finder, query, WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE|WEBKIT_FIND_OPTIONS_WRAP_AROUND, 128);
+}
+
+gboolean onInSiteSearchInput(GtkEntry *entry, GdkEventKey *key, RuskWindow *rusk)
+{
+	if(key->keyval == GDK_KEY_Return)
+	{
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+		return TRUE;
+	}else
+	{
+		runInSiteSearch(rusk, gtk_entry_get_text(rusk->insiteSearch), FALSE);
+		return FALSE;
+	}
+}
+
+void inSiteSearchToggle(RuskWindow *rusk)
+{
+	if(!gtk_widget_is_visible(GTK_WIDGET(rusk->insiteSearch)))
+	{
+		gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), TRUE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->insiteSearch));
+
+		WebKitFindController *finder = webkit_web_view_get_find_controller(rusk->webview);
+		runInSiteSearch(rusk, webkit_find_controller_get_search_text(finder), TRUE);
+	}else
+	if(gtk_window_get_focus(rusk->window) == GTK_WIDGET(rusk->insiteSearch))
+	{
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+	}else
+	{
+		webkit_find_controller_search_finish(webkit_web_view_get_find_controller(rusk->webview));
+		gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+	}
+}
+
+void inSiteSearchNext(RuskWindow *rusk)
+{
+	webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
+}
+
+void inSiteSearchPrev(RuskWindow *rusk)
+{
+	webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
 }
 
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
@@ -98,37 +180,22 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				webkit_web_view_set_zoom_level(rusk->webview, 1.0);
 				proceed = TRUE;
 				break;
+
+			case GDK_KEY_G:
+				inSiteSearchToggle(rusk);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_N:
+				inSiteSearchNext(rusk);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_P:
+				inSiteSearchPrev(rusk);
+				proceed = TRUE;
+				break;
 		}
 	}
 	return proceed;
-}
-
-void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
-{
-	cairo_surface_t *favicon;
-	int width, height;
-	GdkPixbuf *pixbuf;
-
-	if((favicon = webkit_web_view_get_favicon(rusk->webview)) == NULL)
-		return;
-
-	width = cairo_image_surface_get_width(favicon);
-	height = cairo_image_surface_get_height(favicon);
-
-	if(width <= 0 || height <= 0)
-		return;
-
-	pixbuf = gdk_pixbuf_get_from_surface(favicon, 0, 0, width, height);
-
-	gtk_window_set_icon(rusk->window, pixbuf);
-}
-
-void onLinkHover(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
-{
-	if(webkit_hit_test_result_context_is_link(hitTest))
-		gtk_window_set_title(rusk->window, webkit_hit_test_result_get_link_uri(hitTest));
-	else
-		gtk_window_set_title(rusk->window, webkit_web_view_get_title(rusk->webview));
 }
 
 int setupWebView(RuskWindow *rusk)
@@ -165,6 +232,10 @@ int makeWindow(RuskWindow *rusk)
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(rusk->window), box);
 
+	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
+	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
+	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
+
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->progressbar), FALSE, FALSE, 0);
 
@@ -177,6 +248,7 @@ int makeWindow(RuskWindow *rusk)
 	gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
+	g_signal_connect(G_OBJECT(rusk->insiteSearch), "key-release-event", G_CALLBACK(onInSiteSearchInput), rusk);
 
 	return 0;
 }
