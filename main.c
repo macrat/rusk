@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
 
 #define COOKIEPATH "./cookie.txt"
@@ -36,6 +37,27 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 			gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
 			break;
 	}
+}
+
+gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
+{
+	gboolean proceed = FALSE;
+
+	if(key->state & GDK_CONTROL_MASK)
+	{
+		switch(gdk_keyval_to_upper(key->keyval))
+		{
+			case GDK_KEY_B:
+				webkit_web_view_go_back(rusk->webview);
+				proceed = TRUE;
+				break;
+			case GDK_KEY_F:
+				webkit_web_view_go_forward(rusk->webview);
+				proceed = TRUE;
+				break;
+		}
+	}
+	return proceed;
 }
 
 int setupWebView(RuskWindow *rusk)
@@ -78,6 +100,8 @@ int makeWindow(RuskWindow *rusk)
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
 	gtk_widget_hide(GTK_WIDGET(rusk->progressbar));
+
+	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
 
 	return 0;
 }
