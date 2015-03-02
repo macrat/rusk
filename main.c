@@ -10,7 +10,13 @@ typedef struct {
 } RuskWindow;
 
 
-int setupWebView()
+void onChangeTitle(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
+{
+	const gchar *title = webkit_web_view_get_title(rusk->webview);
+	gtk_window_set_title(rusk->window, title);
+}
+
+int setupWebView(RuskWindow *rusk)
 {
 	WebKitCookieManager *cookieManager;
 
@@ -19,6 +25,8 @@ int setupWebView()
 		return -1;
 
 	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
+
+	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onChangeTitle), rusk);
 
 	return 0;
 }
@@ -54,7 +62,7 @@ int main(int argc, char **argv)
 	if(makeWindow(&rusk) != 0)
 		return -1;
 
-	if(setupWebView() != 0)
+	if(setupWebView(&rusk) != 0)
 		return -1;
 
 	webkit_web_view_load_uri(WEBKIT_WEB_VIEW(rusk.webview), "http://google.com/");  /* debug */
