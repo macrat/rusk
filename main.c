@@ -429,20 +429,27 @@ int makeWindow(RuskWindow *rusk)
 	return 0;
 }
 
+RuskWindow* makeRusk(RuskWindow *rusk)
+{
+	if(makeWindow(rusk) != 0)
+		return NULL;
+
+	if(setupWebView(rusk) != 0)
+		return NULL;
+
+	if((rusk->historyFile = fopen(HISTORYPATH, "a")) == NULL)
+		return NULL;
+
+	return rusk;
+}
+
 int main(int argc, char **argv)
 {
 	RuskWindow rusk;
 
 	gtk_init(&argc, &argv);
 
-	if(makeWindow(&rusk) != 0)
-		return -1;
-
-	if(setupWebView(&rusk) != 0)
-		return -1;
-
-	if((rusk.historyFile = fopen(HISTORYPATH, "a")) == NULL)
-		return -1;
+	makeRusk(&rusk);
 
 	openURI(&rusk, "google.com");  /* debug */
 
