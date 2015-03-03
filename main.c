@@ -17,6 +17,8 @@
 #define BORDER_COLOR_TLS_ERROR	(&((GdkRGBA){255, 0, 0, 255}))
 #define BORDER_COLOR_SECURE	(&((GdkRGBA){0, 255, 0, 255}))
 
+#define VERSION	"alpha"
+
 
 typedef struct {
 	WebKitWebView *webview;
@@ -293,6 +295,8 @@ int setupWebView(RuskWindow *rusk)
 	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
 
 	webkit_web_context_set_favicon_database_directory(context, FAVICONDIR);
+
+	webkit_settings_set_user_agent_with_application_details(webkit_web_view_get_settings(rusk->webview), "rusk", VERSION);
 
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::title", G_CALLBACK(onTitleChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onProgressChange), rusk);
