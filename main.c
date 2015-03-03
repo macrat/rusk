@@ -165,12 +165,14 @@ void runInSiteSearch(RuskWindow *rusk, const char *query, const int force)
 
 void inSiteSearchNext(RuskWindow *rusk)
 {
-	webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
+	if(gtk_widget_is_visible(GTK_WIDGET(rusk->insiteSearch)))
+		webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
 }
 
 void inSiteSearchPrev(RuskWindow *rusk)
 {
-	webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
+	if(gtk_widget_is_visible(GTK_WIDGET(rusk->insiteSearch)))
+		webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
 }
 
 gboolean onInSiteSearchInput(GtkEntry *entry, GdkEventKey *key, RuskWindow *rusk)
