@@ -317,9 +317,11 @@ int makeWindow(RuskWindow *rusk)
 	gtk_container_add(GTK_CONTAINER(rusk->window), box);
 
 	rusk->addressbar = GTK_ENTRY(gtk_entry_new());
+	gtk_entry_set_placeholder_text(rusk->addressbar, "URI");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->addressbar), FALSE, FALSE, 0);
 
 	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
+	gtk_entry_set_placeholder_text(rusk->insiteSearch, "site search");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
 
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
