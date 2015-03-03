@@ -6,9 +6,10 @@
 #include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
 
-#define COOKIEPATH	"./cookie.txt"
-#define HISTORYPATH	"./history.txt"
-#define FAVICONDIR	"/mnt/tmpfs/"
+#define COOKIEPATH		"./cookie.txt"
+#define HISTORYPATH		"./history.txt"
+#define FAVICONDIR		"/mnt/tmpfs/"
+#define SAVEDEFAULTDIR	"/mnt/tmpfs/"
 
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
@@ -301,6 +302,44 @@ GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 	return GTK_WIDGET(createNewWindow(rusk)->webview);
 }
 
+gboolean decideDownloadDestination(WebKitDownload *download, const gchar *suggest, RuskWindow *rusk)
+{
+	GtkWidget *dialog;
+
+	dialog = gtk_file_chooser_dialog_new("Save File", rusk->window, GTK_FILE_CHOOSER_ACTION_SAVE,
+										  "_Cancel", GTK_RESPONSE_CANCEL,
+										  "_Save", GTK_RESPONSE_ACCEPT,
+										  NULL);
+
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+
+	char *buf = g_strdup_printf(SAVEDEFAULTDIR"%s", suggest);
+	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), buf);
+	g_free(buf);
+
+	if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+		printf("download %s\n", webkit_uri_request_get_uri(webkit_download_get_request(download)));
+		printf("suggest: %s\n", suggest);
+		printf("save to: %s\n", filename);
+
+		g_free(filename);
+	}
+
+	gtk_widget_destroy(dialog);
+
+	return TRUE;
+}
+
+void onDownloadStarted(WebKitWebView *webview, WebKitDownload *download, RuskWindow *rusk)
+{
+	g_signal_connect(G_OBJECT(download), "decide-destination", G_CALLBACK(decideDownloadDestination), rusk);
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
@@ -409,6 +448,8 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::favicon", G_CALLBACK(onFaviconChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "mouse-target-changed", G_CALLBACK(onLinkHover), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "create", G_CALLBACK(onRequestNewWindow), rusk);
+
+	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
 
 	return 0;
 }
