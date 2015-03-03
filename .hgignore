@@ -2,5 +2,6 @@ syntax: glob
 .*.swp
 *.o
 rusk
+rusk-dl
 cookie.txt
 history.txt
