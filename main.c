@@ -144,11 +144,24 @@ void runInSiteSearch(RuskWindow *rusk, const char *query, const int force)
 		webkit_find_controller_search(finder, query, WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE|WEBKIT_FIND_OPTIONS_WRAP_AROUND, 128);
 }
 
+void inSiteSearchNext(RuskWindow *rusk)
+{
+	webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
+}
+
+void inSiteSearchPrev(RuskWindow *rusk)
+{
+	webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
+}
+
 gboolean onInSiteSearchInput(GtkEntry *entry, GdkEventKey *key, RuskWindow *rusk)
 {
 	if(key->keyval == GDK_KEY_Return)
 	{
-		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+		if(key->state & GDK_SHIFT_MASK)
+			inSiteSearchPrev(rusk);
+		else
+			inSiteSearchNext(rusk);
 		return TRUE;
 	}else
 	{
@@ -172,16 +185,6 @@ void inSiteSearchToggle(RuskWindow *rusk)
 		gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
 	}
-}
-
-void inSiteSearchNext(RuskWindow *rusk)
-{
-	webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
-}
-
-void inSiteSearchPrev(RuskWindow *rusk)
-{
-	webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
 }
 
 void addressbarToggle(RuskWindow *rusk)
@@ -251,7 +254,7 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				webkit_web_view_set_zoom_level(rusk->webview, 1.0);
 				break;
 
-			case GDK_KEY_G:
+			case GDK_KEY_S:
 				inSiteSearchToggle(rusk);
 				break;
 			case GDK_KEY_N:
@@ -261,7 +264,7 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				inSiteSearchPrev(rusk);
 				break;
 
-			case GDK_KEY_U:
+			case GDK_KEY_O:
 				addressbarToggle(rusk);
 				break;
 
