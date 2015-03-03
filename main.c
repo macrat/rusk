@@ -281,7 +281,7 @@ void togglePrivateBrowsing(RuskWindow *rusk)
 	updateBorder(rusk);
 }
 
-GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
+RuskWindow* createNewWindow(RuskWindow *rusk)
 {
 	RuskWindow *newRusk = makeRusk();
 
@@ -289,7 +289,12 @@ GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 	WebKitSettings *newRuskSettings = webkit_web_view_get_settings(rusk->webview);
 	webkit_settings_set_enable_private_browsing(newRuskSettings, webkit_settings_get_enable_private_browsing(settings));
 
-	return GTK_WIDGET(newRusk->webview);
+	return newRusk;
+}
+
+GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
+{
+	return GTK_WIDGET(createNewWindow(rusk)->webview);
 }
 
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
@@ -340,7 +345,10 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				inSiteSearchToggle(rusk);
 				break;
 			case GDK_KEY_N:
-				inSiteSearchNext(rusk);
+				if(key->state & GDK_SHIFT_MASK)
+					createNewWindow(rusk);
+				else
+					inSiteSearchNext(rusk);
 				break;
 			case GDK_KEY_P:
 				if(key->state & GDK_SHIFT_MASK)
