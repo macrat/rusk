@@ -34,6 +34,12 @@ typedef struct {
 } RuskWindow;
 
 
+RuskWindow* makeRusk();
+
+
+int g_ruskCounter = 0;
+
+
 void openURI(RuskWindow *rusk, const char *uri)
 {
 	char *buf, *realURI;
@@ -275,6 +281,13 @@ void togglePrivateBrowsing(RuskWindow *rusk)
 	updateBorder(rusk);
 }
 
+GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
+{
+	RuskWindow *newRusk = makeRusk();
+
+	return GTK_WIDGET(newRusk->webview);
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
@@ -379,8 +392,22 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onLoadChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::favicon", G_CALLBACK(onFaviconChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "mouse-target-changed", G_CALLBACK(onLinkHover), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "create", G_CALLBACK(onRequestNewWindow), rusk);
 
 	return 0;
+}
+
+void closeRusk(GtkWidget *widget, RuskWindow *rusk)
+{
+	gtk_widget_destroy(GTK_WIDGET(rusk->window));
+	fclose(rusk->historyFile);
+	free(rusk);
+
+	g_ruskCounter--;
+	if(g_ruskCounter <= 0)
+	{
+		gtk_main_quit();
+	}
 }
 
 int makeWindow(RuskWindow *rusk)
@@ -413,7 +440,7 @@ int makeWindow(RuskWindow *rusk)
 	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->webview), TRUE, TRUE, 0);
 
-	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(closeRusk), rusk);
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
 	gtk_widget_set_visible(GTK_WIDGET(rusk->addressbar), FALSE);
@@ -429,8 +456,13 @@ int makeWindow(RuskWindow *rusk)
 	return 0;
 }
 
-RuskWindow* makeRusk(RuskWindow *rusk)
+RuskWindow* makeRusk()
 {
+	RuskWindow *rusk;
+	
+	if((rusk = malloc(sizeof(RuskWindow))) == NULL)
+		return NULL;
+
 	if(makeWindow(rusk) != 0)
 		return NULL;
 
@@ -440,18 +472,20 @@ RuskWindow* makeRusk(RuskWindow *rusk)
 	if((rusk->historyFile = fopen(HISTORYPATH, "a")) == NULL)
 		return NULL;
 
+	g_ruskCounter++;
+
 	return rusk;
 }
 
 int main(int argc, char **argv)
 {
-	RuskWindow rusk;
+	RuskWindow *rusk;
 
 	gtk_init(&argc, &argv);
 
-	makeRusk(&rusk);
+	rusk = makeRusk();
 
-	openURI(&rusk, "google.com");  /* debug */
+	openURI(rusk, "google.com");  /* debug */
 
 	gtk_main();
 
