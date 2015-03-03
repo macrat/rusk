@@ -15,6 +15,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
+#include <sqlite3.h>
 
 #define DATABASEPATH	"./rusk.db"
 #define FAVICONDIR		"/mnt/tmpfs/"
@@ -40,6 +41,10 @@ typedef struct {
 	GtkEntry *addressbar;
 	GtkEntry *globalSearch;
 	GtkProgressBar *progressbar;
+	struct {
+		sqlite3 *connection;
+		sqlite3_stmt *insertStmt;
+	} database;
 } RuskWindow;
 
 
@@ -104,6 +109,28 @@ void updateBorder(RuskWindow *rusk)
 	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, borderColor);
 }
 
+void appendHistory(RuskWindow *rusk)
+{
+	if(!webkit_settings_get_enable_private_browsing(webkit_web_view_get_settings(rusk->webview)))
+	{
+		const char *uri = webkit_web_view_get_uri(rusk->webview);
+
+		sqlite3_reset(rusk->database.insertStmt);
+
+		sqlite3_bind_int(rusk->database.insertStmt, sqlite3_bind_parameter_index(rusk->database.insertStmt, ":date"), time(NULL));
+		sqlite3_bind_text(rusk->database.insertStmt, sqlite3_bind_parameter_index(rusk->database.insertStmt, ":uri"), uri, strlen(uri), SQLITE_STATIC);
+
+		while(TRUE)
+		{
+			int result = sqlite3_step(rusk->database.insertStmt);
+			if(result == SQLITE_DONE)
+				break;
+			if(result == SQLITE_ERROR)
+				break;
+		}
+	}
+}
+
 void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
 {
 	switch(event)
@@ -114,7 +141,7 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 
 		case WEBKIT_LOAD_COMMITTED:
 			updateBorder(rusk);
-
+			appendHistory(rusk);
 			break;
 
 		case WEBKIT_LOAD_FINISHED:
@@ -464,6 +491,9 @@ void closeRusk(GtkWidget *widget, RuskWindow *rusk)
 	gtk_widget_destroy(GTK_WIDGET(rusk->window));
 	free(rusk);
 
+	sqlite3_finalize(rusk->database.insertStmt);
+	sqlite3_close(rusk->database.connection);
+
 	g_ruskCounter--;
 	if(g_ruskCounter <= 0)
 	{
@@ -517,6 +547,24 @@ int makeWindow(RuskWindow *rusk)
 	return 0;
 }
 
+int connectDataBase(RuskWindow *rusk)
+{
+	if(sqlite3_open(DATABASEPATH, &rusk->database.connection) != SQLITE_OK)
+		return -1;
+
+	char *error = NULL;
+	if(sqlite3_exec(rusk->database.connection, "create table if not exists rusk_history (date integer not null check(date > 0), uri text not null unique);", NULL, NULL, &error) != SQLITE_OK)
+	{
+		sqlite3_free(error);
+		return -1;
+	}
+
+	const char *insert = "insert or replace into rusk_history values(:date, :uri);";
+	sqlite3_prepare(rusk->database.connection, insert, strlen(insert), &rusk->database.insertStmt, NULL);
+
+	return 0;
+}
+
 RuskWindow* makeRusk()
 {
 	RuskWindow *rusk;
@@ -528,6 +576,9 @@ RuskWindow* makeRusk()
 		return NULL;
 
 	if(setupWebView(rusk) != 0)
+		return NULL;
+
+	if(connectDataBase(rusk) != 0)
 		return NULL;
 
 	g_ruskCounter++;
