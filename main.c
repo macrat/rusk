@@ -25,6 +25,7 @@ typedef struct {
 	GtkWindow *window;
 	GtkEntry *insiteSearch;
 	GtkEntry *addressbar;
+	GtkEntry *globalSearch;
 	GtkProgressBar *progressbar;
 	FILE *historyFile;
 } RuskWindow;
@@ -212,6 +213,49 @@ gboolean onAddressbarInput(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk
 	}
 }
 
+void globalSearchToggle(RuskWindow *rusk, const char *site)
+{
+	if(!gtk_widget_get_visible(GTK_WIDGET(rusk->globalSearch)))
+	{
+		gtk_entry_set_placeholder_text(rusk->globalSearch, site);
+		gtk_widget_set_visible(GTK_WIDGET(rusk->globalSearch), TRUE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->globalSearch));
+	}else
+	{
+		gtk_widget_set_visible(GTK_WIDGET(rusk->globalSearch), FALSE);
+		gtk_window_set_focus(rusk->window, GTK_WIDGET(rusk->webview));
+	}
+}
+
+void runGlobalSearch(RuskWindow *rusk)
+{
+	char *uri = NULL;
+	const char *site = gtk_entry_get_placeholder_text(rusk->globalSearch);
+
+	if(strstr(site, "google"))
+		uri = "https://google.com/search?q=%s";
+	if(strstr(site, "maps"))
+		uri = "https://google.com/maps?q=%s";
+	if(strstr(site, "images"))
+		uri = "https://google.com/search?tbm=isch&q=%s";
+
+	if(uri)
+	{
+		char *realURI = g_strdup_printf(uri, gtk_entry_get_text(rusk->globalSearch));
+		openURI(rusk, realURI);
+		g_free(realURI);
+
+		gtk_entry_set_text(rusk->globalSearch, "");
+	}
+
+	globalSearchToggle(rusk, "");
+}
+
+void onGlobalSearchActivate(GtkWidget *widget, RuskWindow *rusk)
+{
+	runGlobalSearch(rusk);
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
@@ -270,6 +314,16 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				addressbarToggle(rusk);
 				break;
 
+			case GDK_KEY_G:
+				globalSearchToggle(rusk, "google");
+				break;
+			case GDK_KEY_M:
+				globalSearchToggle(rusk, "maps");
+				break;
+			case GDK_KEY_I:
+				globalSearchToggle(rusk, "images");
+				break;
+
 			default:
 				proceed = FALSE;
 		}
@@ -324,6 +378,9 @@ int makeWindow(RuskWindow *rusk)
 	gtk_entry_set_placeholder_text(rusk->addressbar, "URI");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->addressbar), FALSE, FALSE, 0);
 
+	rusk->globalSearch = GTK_ENTRY(gtk_entry_new());
+	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->globalSearch), FALSE, FALSE, 0);
+
 	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
 	gtk_entry_set_placeholder_text(rusk->insiteSearch, "site search");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
@@ -338,12 +395,14 @@ int makeWindow(RuskWindow *rusk)
 	gtk_widget_show_all(GTK_WIDGET(rusk->window));
 
 	gtk_widget_set_visible(GTK_WIDGET(rusk->addressbar), FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(rusk->globalSearch), FALSE);
 	gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), FALSE);
 	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
 	g_signal_connect(G_OBJECT(rusk->insiteSearch), "key-release-event", G_CALLBACK(onInSiteSearchInput), rusk);
 	g_signal_connect(G_OBJECT(rusk->addressbar), "key-release-event", G_CALLBACK(onAddressbarInput), rusk);
+	g_signal_connect(G_OBJECT(rusk->globalSearch), "activate", G_CALLBACK(onGlobalSearchActivate), rusk);
 
 	return 0;
 }
