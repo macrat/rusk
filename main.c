@@ -13,9 +13,12 @@
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
-#define BORDER_COLOR_NORMAL	(&((GdkRGBA){1.0, 1.0, 1.0, 1.0}))
-#define BORDER_COLOR_TLS_ERROR	(&((GdkRGBA){1.0, 0.5, 0.5, 1.0}))
-#define BORDER_COLOR_SECURE	(&((GdkRGBA){0.5, 1.0, 0.5, 1.0}))
+#define BORDER_COLOR_NORMAL				(&((GdkRGBA){1.0, 1.0, 1.0, 1.0}))
+#define BORDER_COLOR_TLS_ERROR			(&((GdkRGBA){1.0, 0.5, 0.5, 1.0}))
+#define BORDER_COLOR_SECURE				(&((GdkRGBA){0.5, 1.0, 0.5, 1.0}))
+#define BORDER_COLOR_PRIVATE			(&((GdkRGBA){0.0, 0.0, 0.0, 1.0}))
+#define BORDER_COLOR_PRIVATE_TLS_ERROR	(&((GdkRGBA){0.5, 0.0, 0.0, 1.0}))
+#define BORDER_COLOR_PRIVATE_SECURE		(&((GdkRGBA){0.0, 0.5, 0.0, 1.0}))
 
 #define VERSION	"alpha"
 
@@ -64,21 +67,26 @@ void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk
 	gtk_progress_bar_set_fraction(rusk->progressbar, progress);
 }
 
-void checkTLSInfo(RuskWindow *rusk)
+void updateBorder(RuskWindow *rusk)
 {
+	gboolean privateMode = webkit_settings_get_enable_private_browsing(webkit_web_view_get_settings(rusk->webview));
+	GdkRGBA *borderColor;
+
 	if(strncasecmp(webkit_web_view_get_uri(rusk->webview), "https://", strlen("https://")) != 0)
 	{
-		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
+		borderColor = privateMode ? BORDER_COLOR_PRIVATE : BORDER_COLOR_NORMAL;
 	}else
 	{
 		GTlsCertificate *certificate;
 		GTlsCertificateFlags errors;
 
 		if(webkit_web_view_get_tls_info(rusk->webview, &certificate, &errors) == FALSE || errors)
-			gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_TLS_ERROR);
+			borderColor = privateMode ? BORDER_COLOR_PRIVATE_TLS_ERROR : BORDER_COLOR_TLS_ERROR;
 		else
-			gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_SECURE);
+			borderColor = privateMode ? BORDER_COLOR_PRIVATE_SECURE : BORDER_COLOR_SECURE;
 	}
+
+	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, borderColor);
 }
 
 void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
@@ -90,8 +98,11 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 			break;
 
 		case WEBKIT_LOAD_COMMITTED:
-			checkTLSInfo(rusk);
-			fprintf(rusk->historyFile, "%s\n", webkit_web_view_get_uri(rusk->webview));
+			updateBorder(rusk);
+
+			if(!webkit_settings_get_enable_private_browsing(webkit_web_view_get_settings(rusk->webview)))
+				fprintf(rusk->historyFile, "%s\n", webkit_web_view_get_uri(rusk->webview));
+
 			break;
 
 		case WEBKIT_LOAD_FINISHED:
@@ -255,6 +266,15 @@ void onGlobalSearchActivate(GtkWidget *widget, RuskWindow *rusk)
 	runGlobalSearch(rusk);
 }
 
+void togglePrivateBrowsing(RuskWindow *rusk)
+{
+	WebKitSettings *settings = webkit_web_view_get_settings(rusk->webview);
+
+	webkit_settings_set_enable_private_browsing(settings, !webkit_settings_get_enable_private_browsing(settings));
+
+	updateBorder(rusk);
+}
+
 gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
@@ -306,7 +326,10 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				inSiteSearchNext(rusk);
 				break;
 			case GDK_KEY_P:
-				inSiteSearchPrev(rusk);
+				if(key->state & GDK_SHIFT_MASK)
+					togglePrivateBrowsing(rusk);
+				else
+					inSiteSearchPrev(rusk);
 				break;
 
 			case GDK_KEY_O:
