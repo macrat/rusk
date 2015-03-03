@@ -16,7 +16,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
 
-#define COOKIEPATH		"./cookie.txt"
+#define DATABASEPATH	"./rusk.db"
 #define FAVICONDIR		"/mnt/tmpfs/"
 #define SAVEDEFAULTDIR	"/mnt/tmpfs/"
 
@@ -441,7 +441,7 @@ int setupWebView(RuskWindow *rusk)
 	if(cookieManager == NULL)
 		return -1;
 
-	webkit_cookie_manager_set_persistent_storage(cookieManager, COOKIEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT);
+	webkit_cookie_manager_set_persistent_storage(cookieManager, DATABASEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
 
 	webkit_web_context_set_favicon_database_directory(context, FAVICONDIR);
 

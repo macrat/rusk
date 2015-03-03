@@ -3,4 +3,4 @@ syntax: glob
 *.o
 rusk
 rusk-dl
-cookie.txt
+rusk.db
