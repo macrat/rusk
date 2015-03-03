@@ -200,6 +200,8 @@ void inSiteSearchToggle(RuskWindow *rusk)
 
 		WebKitFindController *finder = webkit_web_view_get_find_controller(rusk->webview);
 		runInSiteSearch(rusk, webkit_find_controller_get_search_text(finder), TRUE);
+
+		webkit_find_controller_search_previous(finder);
 	}else
 	{
 		webkit_find_controller_search_finish(webkit_web_view_get_find_controller(rusk->webview));
