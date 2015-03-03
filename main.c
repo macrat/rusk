@@ -13,6 +13,10 @@
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
+#define BORDER_COLOR_NORMAL	(&((GdkRGBA){255, 255, 255, 255}))
+#define BORDER_COLOR_TLS_ERROR	(&((GdkRGBA){255, 0, 0, 255}))
+#define BORDER_COLOR_SECURE	(&((GdkRGBA){0, 255, 0, 255}))
+
 
 typedef struct {
 	WebKitWebView *webview;
@@ -57,6 +61,24 @@ void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk
 	gtk_progress_bar_set_fraction(rusk->progressbar, progress);
 }
 
+void checkTLSInfo(RuskWindow *rusk)
+{
+	GTlsCertificate *certificate;
+	GTlsCertificateFlags errors;
+
+	if(webkit_web_view_get_tls_info(rusk->webview, &certificate, &errors) == FALSE)
+	{
+		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
+	}else
+	if(errors)
+	{
+		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_TLS_ERROR);
+	}else
+	{
+		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_SECURE);
+	}
+}
+
 void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rusk)
 {
 	switch(event)
@@ -66,6 +88,7 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 			break;
 
 		case WEBKIT_LOAD_COMMITTED:
+			checkTLSInfo(rusk);
 			fprintf(rusk->historyFile, "%s\n", webkit_web_view_get_uri(rusk->webview));
 			break;
 
@@ -283,6 +306,9 @@ int makeWindow(RuskWindow *rusk)
 
 	if((rusk->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL))) == NULL)
 		return -1;
+
+	gtk_container_set_border_width(GTK_CONTAINER(rusk->window), 2);
+	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
 
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(rusk->window), box);
