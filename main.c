@@ -13,9 +13,9 @@
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
-#define BORDER_COLOR_NORMAL	(&((GdkRGBA){255, 255, 255, 255}))
-#define BORDER_COLOR_TLS_ERROR	(&((GdkRGBA){255, 0, 0, 255}))
-#define BORDER_COLOR_SECURE	(&((GdkRGBA){0, 255, 0, 255}))
+#define BORDER_COLOR_NORMAL	(&((GdkRGBA){1.0, 1.0, 1.0, 1.0}))
+#define BORDER_COLOR_TLS_ERROR	(&((GdkRGBA){1.0, 0.5, 0.5, 1.0}))
+#define BORDER_COLOR_SECURE	(&((GdkRGBA){0.5, 1.0, 0.5, 1.0}))
 
 #define VERSION	"alpha"
 
@@ -66,19 +66,18 @@ void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk
 
 void checkTLSInfo(RuskWindow *rusk)
 {
-	GTlsCertificate *certificate;
-	GTlsCertificateFlags errors;
-
-	if(webkit_web_view_get_tls_info(rusk->webview, &certificate, &errors) == FALSE)
+	if(strncasecmp(webkit_web_view_get_uri(rusk->webview), "https://", strlen("https://")) != 0)
 	{
 		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
 	}else
-	if(errors)
 	{
-		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_TLS_ERROR);
-	}else
-	{
-		gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_SECURE);
+		GTlsCertificate *certificate;
+		GTlsCertificateFlags errors;
+
+		if(webkit_web_view_get_tls_info(rusk->webview, &certificate, &errors) == FALSE || errors)
+			gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_TLS_ERROR);
+		else
+			gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_SECURE);
 	}
 }
 
