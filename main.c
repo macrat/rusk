@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -6,6 +7,7 @@
 #include <webkit2/webkit2.h>
 
 #define COOKIEPATH	"./cookie.txt"
+#define HISTORYPATH	"./history.txt"
 #define FAVICONDIR	"/mnt/tmpfs/"
 
 #define SCROLL_STEP	24
@@ -18,6 +20,7 @@ typedef struct {
 	GtkEntry *insiteSearch;
 	GtkEntry *addressbar;
 	GtkProgressBar *progressbar;
+	FILE *historyFile;
 } RuskWindow;
 
 
@@ -60,6 +63,10 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 	{
 		case WEBKIT_LOAD_STARTED:
 			gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), TRUE);
+			break;
+
+		case WEBKIT_LOAD_COMMITTED:
+			fprintf(rusk->historyFile, "%s\n", webkit_web_view_get_uri(rusk->webview));
 			break;
 
 		case WEBKIT_LOAD_FINISHED:
@@ -316,6 +323,9 @@ int main(int argc, char **argv)
 		return -1;
 
 	if(setupWebView(&rusk) != 0)
+		return -1;
+
+	if((rusk.historyFile = fopen(HISTORYPATH, "a")) == NULL)
 		return -1;
 
 	openURI(&rusk, "google.com");  /* debug */

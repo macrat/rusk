@@ -3,3 +3,4 @@ syntax: glob
 *.o
 rusk
 cookie.txt
+history.txt
