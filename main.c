@@ -345,7 +345,7 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 					inSiteSearchPrev(rusk);
 				break;
 
-			case GDK_KEY_O:
+			case GDK_KEY_U:
 				addressbarToggle(rusk);
 				break;
 
