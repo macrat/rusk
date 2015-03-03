@@ -285,6 +285,10 @@ GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 {
 	RuskWindow *newRusk = makeRusk();
 
+	WebKitSettings *settings = webkit_web_view_get_settings(rusk->webview);
+	WebKitSettings *newRuskSettings = webkit_web_view_get_settings(rusk->webview);
+	webkit_settings_set_enable_private_browsing(newRuskSettings, webkit_settings_get_enable_private_browsing(settings));
+
 	return GTK_WIDGET(newRusk->webview);
 }
 
