@@ -1,3 +1,13 @@
+/*
+ *		rusk browser
+ *			- here is nothing! -
+ *
+ *	the browser for minimalist and keyboard believer.
+ *	this browser expect tiling window manager like awesome.
+ *
+ *					MIT License (c)2015 MacRat
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
