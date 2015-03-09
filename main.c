@@ -152,11 +152,13 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 
 void scroll(RuskWindow *rusk, const int vertical, const int horizonal)
 {
-	char script[1024];
+	char *script;
 
-	snprintf(script, sizeof(script), "window.scrollBy(%d,%d)", horizonal, vertical);
+	script = g_strdup_printf("window.scrollBy(%d,%d)", horizonal, vertical);
 
 	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
+
+	g_free(script);
 }
 
 void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
