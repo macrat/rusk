@@ -24,6 +24,8 @@
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
+#define HOMEPAGE	"http://google.com/"
+
 #define BORDER_COLOR_NORMAL				(&((GdkRGBA){1.0, 1.0, 1.0, 1.0}))
 #define BORDER_COLOR_TLS_ERROR			(&((GdkRGBA){1.0, 0.5, 0.5, 1.0}))
 #define BORDER_COLOR_SECURE				(&((GdkRGBA){0.5, 1.0, 0.5, 1.0}))
@@ -583,6 +585,8 @@ RuskWindow* makeRusk()
 	if(connectDataBase(rusk) != 0)
 		return NULL;
 
+	openURI(rusk, HOMEPAGE);
+
 	g_ruskCounter++;
 
 	return rusk;
@@ -595,8 +599,6 @@ int main(int argc, char **argv)
 	gtk_init(&argc, &argv);
 
 	rusk = makeRusk();
-
-	openURI(rusk, "google.com");  /* debug */
 
 	gtk_main();
 
