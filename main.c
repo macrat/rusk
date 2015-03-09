@@ -522,10 +522,10 @@ int makeWindow(RuskWindow *rusk)
 	gtk_entry_set_placeholder_text(rusk->addressbar, "URI");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->addressbar), FALSE, FALSE, 0);
 
-	rusk->globalSearch = GTK_ENTRY(gtk_entry_new());
+	rusk->globalSearch = GTK_ENTRY(gtk_search_entry_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->globalSearch), FALSE, FALSE, 0);
 
-	rusk->insiteSearch = GTK_ENTRY(gtk_entry_new());
+	rusk->insiteSearch = GTK_ENTRY(gtk_search_entry_new());
 	gtk_entry_set_placeholder_text(rusk->insiteSearch, "site search");
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->insiteSearch), FALSE, FALSE, 0);
 
@@ -544,7 +544,7 @@ int makeWindow(RuskWindow *rusk)
 	gtk_widget_set_visible(GTK_WIDGET(rusk->insiteSearch), FALSE);
 
 	g_signal_connect(G_OBJECT(rusk->window), "key-press-event", G_CALLBACK(onKeyPress), rusk);
-	g_signal_connect(G_OBJECT(rusk->insiteSearch), "key-release-event", G_CALLBACK(onInSiteSearchInput), rusk);
+	g_signal_connect(G_OBJECT(rusk->insiteSearch), "search-changed", G_CALLBACK(onInSiteSearchInput), rusk);
 	g_signal_connect(G_OBJECT(rusk->addressbar), "key-release-event", G_CALLBACK(onAddressbarInput), rusk);
 	g_signal_connect(G_OBJECT(rusk->globalSearch), "activate", G_CALLBACK(onGlobalSearchActivate), rusk);
 
