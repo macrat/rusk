@@ -45,7 +45,7 @@ void failed(WebKitDownload *download, gpointer error, gpointer data)
 	printf("failed\n");
 }
 
-void makeTaskView(GtkBox *parent, DownloadTask *task)
+void addTaskView(GtkBox *parent, DownloadTask *task)
 {
 	GtkWidget *outer, *statusArea, *uri, *dest;
 	GtkWidget *testButton;
@@ -94,11 +94,11 @@ int main(int argc, char **argv)
 
 	task.uri = g_strdup("test_file.txt");
 	task.dest = g_strdup("http://localhost:8790");
-	makeTaskView(GTK_BOX(box), &task);
+	addTaskView(GTK_BOX(box), &task);
 
 	task.uri = g_strdup("this-is-test.txt");
 	task.dest = g_strdup("http://localhost:8790/path/to/file.txt");
-	makeTaskView(GTK_BOX(box), &task);
+	addTaskView(GTK_BOX(box), &task);
 
 	gtk_widget_show_all(window);
 
