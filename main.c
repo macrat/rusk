@@ -26,6 +26,7 @@
 
 #define HOMEPAGE	"http://google.com/"
 
+#define BORDER_WIDTH	2
 #define BORDER_COLOR_NORMAL				(&((GdkRGBA){1.0, 1.0, 1.0, 1.0}))
 #define BORDER_COLOR_TLS_ERROR			(&((GdkRGBA){1.0, 0.5, 0.5, 1.0}))
 #define BORDER_COLOR_SECURE				(&((GdkRGBA){0.5, 1.0, 0.5, 1.0}))
@@ -512,7 +513,7 @@ int makeWindow(RuskWindow *rusk)
 	if((rusk->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL))) == NULL)
 		return -1;
 
-	gtk_container_set_border_width(GTK_CONTAINER(rusk->window), 2);
+	gtk_container_set_border_width(GTK_CONTAINER(rusk->window), BORDER_WIDTH);
 	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
 
 	box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
