@@ -11,7 +11,7 @@ typedef struct {
 	gchar *dest;
 	GtkProgressBar *progress;
 	GtkBox *buttonArea;
-} TaskView;
+} DownloadTask;
 
 
 gboolean decideDestination(WebKitDownload *download, const char *suggest, gpointer data)
@@ -45,7 +45,7 @@ void failed(WebKitDownload *download, gpointer error, gpointer data)
 	printf("failed\n");
 }
 
-void makeTaskView(GtkBox *parent, TaskView *task)
+void makeTaskView(GtkBox *parent, DownloadTask *task)
 {
 	GtkWidget *outer, *statusArea, *uri, *dest;
 	GtkWidget *testButton;
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 	gtk_container_add(GTK_CONTAINER(window), box);
 
-	TaskView task;
+	DownloadTask task;
 
 	task.uri = g_strdup("test_file.txt");
 	task.dest = g_strdup("http://localhost:8790");
