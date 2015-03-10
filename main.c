@@ -92,7 +92,7 @@ void onProgressChange(WebKitWebView *webview, GParamSpec *parm, RuskWindow *rusk
 
 void updateBorder(RuskWindow *rusk)
 {
-	gboolean privateMode = webkit_settings_get_enable_private_browsing(webkit_web_view_get_settings(rusk->webview));
+	const gboolean privateMode = webkit_settings_get_enable_private_browsing(webkit_web_view_get_settings(rusk->webview));
 	GdkRGBA *borderColor;
 
 	if(strncasecmp(webkit_web_view_get_uri(rusk->webview), "https://", strlen("https://")) != 0)
@@ -125,7 +125,7 @@ void appendHistory(RuskWindow *rusk)
 
 		while(TRUE)
 		{
-			int result = sqlite3_step(rusk->database.insertStmt);
+			const int result = sqlite3_step(rusk->database.insertStmt);
 			if(result == SQLITE_DONE)
 				break;
 			if(result == SQLITE_ERROR)
