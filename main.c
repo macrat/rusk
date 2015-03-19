@@ -104,9 +104,12 @@ void updateBorder(RuskWindow *rusk)
 		GTlsCertificateFlags errors;
 
 		if(webkit_web_view_get_tls_info(rusk->webview, &certificate, &errors) == FALSE || errors)
+		{
 			borderColor = privateMode ? BORDER_COLOR_PRIVATE_TLS_ERROR : BORDER_COLOR_TLS_ERROR;
-		else
+		}else
+		{
 			borderColor = privateMode ? BORDER_COLOR_PRIVATE_SECURE : BORDER_COLOR_SECURE;
+		}
 	}
 
 	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, borderColor);
@@ -126,10 +129,10 @@ void appendHistory(RuskWindow *rusk)
 		while(TRUE)
 		{
 			const int result = sqlite3_step(rusk->database.insertStmt);
-			if(result == SQLITE_DONE)
+			if(result == SQLITE_DONE || result == SQLITE_ERROR)
+			{
 				break;
-			if(result == SQLITE_ERROR)
-				break;
+			}
 		}
 	}
 }
@@ -171,13 +174,17 @@ void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk
 	GdkPixbuf *pixbuf;
 
 	if((favicon = webkit_web_view_get_favicon(rusk->webview)) == NULL)
+	{
 		return;
+	}
 
 	width = cairo_image_surface_get_width(favicon);
 	height = cairo_image_surface_get_height(favicon);
 
 	if(width <= 0 || height <= 0)
+	{
 		return;
+	}
 
 	pixbuf = gdk_pixbuf_get_from_surface(favicon, 0, 0, width, height);
 
@@ -187,9 +194,12 @@ void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk
 void onLinkHover(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
 {
 	if(webkit_hit_test_result_context_is_link(hitTest))
+	{
 		gtk_window_set_title(rusk->window, webkit_hit_test_result_get_link_uri(hitTest));
-	else
+	}else
+	{
 		gtk_window_set_title(rusk->window, webkit_web_view_get_title(rusk->webview));
+	}
 }
 
 void runInSiteSearch(RuskWindow *rusk, const char *query, const int force)
@@ -198,19 +208,25 @@ void runInSiteSearch(RuskWindow *rusk, const char *query, const int force)
 	const char *oldquery = webkit_find_controller_get_search_text(finder);
 
 	if(query && (oldquery == NULL || strcmp(query, oldquery) != 0 || force))
+	{
 		webkit_find_controller_search(finder, query, WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE|WEBKIT_FIND_OPTIONS_WRAP_AROUND, 128);
+	}
 }
 
 void inSiteSearchNext(RuskWindow *rusk)
 {
 	if(gtk_widget_is_visible(GTK_WIDGET(rusk->insiteSearch)))
+	{
 		webkit_find_controller_search_next(webkit_web_view_get_find_controller(rusk->webview));
+	}
 }
 
 void inSiteSearchPrev(RuskWindow *rusk)
 {
 	if(gtk_widget_is_visible(GTK_WIDGET(rusk->insiteSearch)))
+	{
 		webkit_find_controller_search_previous(webkit_web_view_get_find_controller(rusk->webview));
+	}
 }
 
 gboolean onInSiteSearchInput(GtkEntry *entry, GdkEventKey *key, RuskWindow *rusk)
@@ -218,9 +234,13 @@ gboolean onInSiteSearchInput(GtkEntry *entry, GdkEventKey *key, RuskWindow *rusk
 	if(key->keyval == GDK_KEY_Return)
 	{
 		if(key->state & GDK_SHIFT_MASK)
+		{
 			inSiteSearchPrev(rusk);
-		else
+		}else
+		{
 			inSiteSearchNext(rusk);
+		}
+
 		return TRUE;
 	}else
 	{
@@ -291,11 +311,15 @@ void runGlobalSearch(RuskWindow *rusk)
 	const char *site = gtk_entry_get_placeholder_text(rusk->globalSearch);
 
 	if(strstr(site, "google"))
+	{
 		uri = "https://google.com/search?q=%s";
-	if(strstr(site, "maps"))
+	}else if(strstr(site, "maps"))
+	{
 		uri = "https://google.com/maps?q=%s";
-	if(strstr(site, "images"))
+	}else if(strstr(site, "images"))
+	{
 		uri = "https://google.com/search?tbm=isch&q=%s";
+	}
 
 	if(uri)
 	{
@@ -393,9 +417,12 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				break;
 			case GDK_KEY_R:
 				if(key->state & GDK_SHIFT_MASK)
+				{
 					webkit_web_view_reload_bypass_cache(rusk->webview);
-				else
+				}else
+				{
 					webkit_web_view_reload(rusk->webview);
+				}
 				break;
 
 			case GDK_KEY_H:
@@ -426,15 +453,21 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				break;
 			case GDK_KEY_N:
 				if(key->state & GDK_SHIFT_MASK)
+				{
 					createNewWindow(rusk);
-				else
+				}else
+				{
 					inSiteSearchNext(rusk);
+				}
 				break;
 			case GDK_KEY_P:
 				if(key->state & GDK_SHIFT_MASK)
+				{
 					togglePrivateBrowsing(rusk);
-				else
+				}else
+				{
 					inSiteSearchPrev(rusk);
+				}
 				break;
 
 			case GDK_KEY_U:
@@ -471,7 +504,9 @@ int setupWebView(RuskWindow *rusk)
 
 	cookieManager = webkit_web_context_get_cookie_manager(context);
 	if(cookieManager == NULL)
+	{
 		return -1;
+	}
 
 	webkit_cookie_manager_set_persistent_storage(cookieManager, DATABASEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
 
@@ -511,7 +546,9 @@ int makeWindow(RuskWindow *rusk)
 	GtkWidget *box;
 
 	if((rusk->window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL))) == NULL)
+	{
 		return -1;
+	}
 
 	gtk_container_set_border_width(GTK_CONTAINER(rusk->window), BORDER_WIDTH);
 	gtk_widget_override_background_color(GTK_WIDGET(rusk->window), GTK_STATE_FLAG_NORMAL, BORDER_COLOR_NORMAL);
@@ -555,7 +592,9 @@ int makeWindow(RuskWindow *rusk)
 int connectDataBase(RuskWindow *rusk)
 {
 	if(sqlite3_open(DATABASEPATH, &rusk->database.connection) != SQLITE_OK)
+	{
 		return -1;
+	}
 
 	char *error = NULL;
 	if(sqlite3_exec(rusk->database.connection, "create table if not exists rusk_history (date integer not null check(date > 0), uri text not null unique);", NULL, NULL, &error) != SQLITE_OK)
@@ -575,16 +614,24 @@ RuskWindow* makeRusk()
 	RuskWindow *rusk;
 	
 	if((rusk = malloc(sizeof(RuskWindow))) == NULL)
+	{
 		return NULL;
+	}
 
 	if(makeWindow(rusk) != 0)
+	{
 		return NULL;
+	}
 
 	if(setupWebView(rusk) != 0)
+	{
 		return NULL;
+	}
 
 	if(connectDataBase(rusk) != 0)
+	{
 		return NULL;
+	}
 
 	openURI(rusk, HOMEPAGE);
 
