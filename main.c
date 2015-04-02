@@ -341,8 +341,17 @@ void onGlobalSearchActivate(GtkWidget *widget, RuskWindow *rusk)
 void togglePrivateBrowsing(RuskWindow *rusk)
 {
 	WebKitSettings *settings = webkit_web_view_get_settings(rusk->webview);
+	WebKitCookieManager *cookieManager = webkit_web_context_get_cookie_manager(webkit_web_context_get_default());
 
-	webkit_settings_set_enable_private_browsing(settings, !webkit_settings_get_enable_private_browsing(settings));
+	if(webkit_settings_get_enable_private_browsing(settings))
+	{
+		webkit_settings_set_enable_private_browsing(settings, FALSE);
+		webkit_cookie_manager_set_accept_policy(cookieManager, WEBKIT_COOKIE_POLICY_ACCEPT_ALWAYS);
+	}else
+	{
+		webkit_settings_set_enable_private_browsing(settings, TRUE);
+		webkit_cookie_manager_set_accept_policy(cookieManager, WEBKIT_COOKIE_POLICY_ACCEPT_NEVER);
+	}
 
 	updateBorder(rusk);
 }
