@@ -360,7 +360,7 @@ RuskWindow* createNewWindow(RuskWindow *rusk)
 
 GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 {
-	return GTK_WIDGET(createNewWindow(rusk)->webview);
+	return GTK_WIDGET(makeRusk()->webview);
 }
 
 gboolean decideDownloadDestination(WebKitDownload *download, const gchar *suggest, RuskWindow *rusk)
@@ -454,7 +454,7 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 			case GDK_KEY_N:
 				if(key->state & GDK_SHIFT_MASK)
 				{
-					createNewWindow(rusk);
+					openURI(createNewWindow(rusk), HOMEPAGE);
 				}else
 				{
 					inSiteSearchNext(rusk);
@@ -633,8 +633,6 @@ RuskWindow* makeRusk()
 		return NULL;
 	}
 
-	openURI(rusk, HOMEPAGE);
-
 	g_ruskCounter++;
 
 	return rusk;
@@ -647,6 +645,8 @@ int main(int argc, char **argv)
 	gtk_init(&argc, &argv);
 
 	rusk = makeRusk();
+
+	openURI(rusk, HOMEPAGE);
 
 	gtk_main();
 
