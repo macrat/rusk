@@ -67,6 +67,10 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 
 	task->progress = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(statusArea), GTK_WIDGET(task->progress), TRUE, TRUE, 0);
+	gtk_progress_bar_set_show_text(task->progress, TRUE);
+
+	gtk_progress_bar_set_fraction(task->progress, 0.25);  // debug
+	gtk_progress_bar_set_text(task->progress, "25% [12 sec @ 54 sec]");  // debug
 
 	dest = gtk_link_button_new(task->dest);
 	gtk_widget_set_halign(dest, GTK_ALIGN_START);
