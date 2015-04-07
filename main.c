@@ -63,9 +63,7 @@ void openURI(RuskWindow *rusk, const char *uri)
 
 	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
 	{
-		buf = realpath(uri, NULL);
-		realURI = g_strdup_printf("file://%s", buf);
-		free(buf);
+		realURI = g_strdup_printf("file://%s", uri);
 	}else if(strstr(uri, "://"))
 	{
 		realURI = g_strdup(uri);
