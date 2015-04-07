@@ -543,7 +543,18 @@ int setupWebView(RuskWindow *rusk)
 		return -1;
 	}
 
-	webkit_cookie_manager_set_persistent_storage(cookieManager, DATABASEPATH, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+	wordexp_t buf;
+	wordexp(DATABASEPATH, &buf, 0);
+	if(buf.we_wordc == 1)
+	{
+		char *dbpath = realpath(buf.we_wordv[0], NULL);
+		webkit_cookie_manager_set_persistent_storage(cookieManager, dbpath, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+		free(dbpath);
+	}else
+	{
+		return -1;
+	}
+	wordfree(&buf);
 
 	webkit_web_context_set_favicon_database_directory(context, FAVICONDIR);
 
@@ -626,10 +637,25 @@ int makeWindow(RuskWindow *rusk)
 
 int connectDataBase(RuskWindow *rusk)
 {
-	if(sqlite3_open(DATABASEPATH, &rusk->database.connection) != SQLITE_OK)
+	wordexp_t buf;
+	char *dbpath;
+
+	wordexp(DATABASEPATH, &buf, 0);
+	if(buf.we_wordc == 1)
+	{
+		dbpath = realpath(buf.we_wordv[0], NULL);
+	}else
 	{
 		return -1;
 	}
+	wordfree(&buf);
+
+	if(sqlite3_open(dbpath, &rusk->database.connection) != SQLITE_OK)
+	{
+		return -1;
+	}
+
+	free(dbpath);
 
 	char *error = NULL;
 	if(sqlite3_exec(rusk->database.connection, "create table if not exists rusk_history (date integer not null check(date > 0), uri text not null unique);", NULL, NULL, &error) != SQLITE_OK)
