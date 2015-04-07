@@ -311,6 +311,7 @@ gboolean onAddressbarInput(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk
 		openURI(rusk, gtk_entry_get_text(rusk->addressbar));
 		addressbarToggle(rusk);
 	}
+	return FALSE;
 }
 
 void globalSearchToggle(RuskWindow *rusk, const char *site)
