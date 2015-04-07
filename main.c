@@ -175,6 +175,9 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 		case WEBKIT_LOAD_FINISHED:
 			gtk_widget_set_visible(GTK_WIDGET(rusk->progressbar), FALSE);
 			break;
+
+		default:
+			break;
 	}
 }
 
