@@ -70,6 +70,13 @@ void openURI(RuskWindow *rusk, const char *uri)
 		if(buf.we_wordc > 0)
 		{
 			realURI = g_strdup_printf("file://%s", buf.we_wordv[0]);
+			for(int i=1; i<buf.we_wordc; i++)
+			{
+				RuskWindow *rusk = makeRusk(rusk);
+				char *windowuri = g_strdup_printf("file://%s", buf.we_wordv[i]);
+				openURI(rusk, windowuri);
+				g_free(windowuri);
+			}
 		}else
 		{
 			realURI = g_strdup("");
