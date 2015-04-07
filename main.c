@@ -61,7 +61,7 @@ int g_ruskCounter = 0;
 
 void openURI(RuskWindow *rusk, const char *uri)
 {
-	char *buf, *realURI;
+	char *realURI;
 
 	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
 	{
