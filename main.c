@@ -69,11 +69,16 @@ void openURI(RuskWindow *rusk, const char *uri)
 		wordexp(uri, &buf, 0);
 		if(buf.we_wordc > 0)
 		{
-			realURI = g_strdup_printf("file://%s", buf.we_wordv[0]);
+			char *filepath = realpath(buf.we_wordv[0], NULL);
+			realURI = g_strdup_printf("file://%s", filepath);
+			free(filepath);
+
 			for(int i=1; i<buf.we_wordc; i++)
 			{
 				RuskWindow *rusk = makeRusk(rusk);
-				char *windowuri = g_strdup_printf("file://%s", buf.we_wordv[i]);
+				char *filepath = realpath(buf.we_wordv[i], NULL);
+				char *windowuri = g_strdup_printf("file://%s", filepath);
+				free(filepath);
 				openURI(rusk, windowuri);
 				g_free(windowuri);
 			}
@@ -665,13 +670,20 @@ RuskWindow* makeRusk()
 
 int main(int argc, char **argv)
 {
-	RuskWindow *rusk;
-
 	gtk_init(&argc, &argv);
 
-	rusk = makeRusk();
-
-	openURI(rusk, HOMEPAGE);
+	if(argc <= 1)
+	{
+		RuskWindow *rusk = makeRusk();
+		openURI(rusk, HOMEPAGE);
+	}else
+	{
+		for(int i=1; i<argc; i++)
+		{
+			RuskWindow *rusk = makeRusk(rusk);
+			openURI(rusk, argv[i]);
+		}
+	}
 
 	gtk_main();
 
