@@ -16,6 +16,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <webkit2/webkit2.h>
 #include <sqlite3.h>
+#include <wordexp.h>
 
 #define DATABASEPATH	"./rusk.db"
 #define FAVICONDIR		"/mnt/tmpfs/"
@@ -63,7 +64,17 @@ void openURI(RuskWindow *rusk, const char *uri)
 
 	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
 	{
-		realURI = g_strdup_printf("file://%s", uri);
+		wordexp_t buf;
+
+		wordexp(uri, &buf, 0);
+		if(buf.we_wordc > 0)
+		{
+			realURI = g_strdup_printf("file://%s", buf.we_wordv[0]);
+		}else
+		{
+			realURI = g_strdup("");
+		}
+		wordfree(&buf);
 	}else if(strstr(uri, "://"))
 	{
 		realURI = g_strdup(uri);
