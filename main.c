@@ -548,8 +548,14 @@ int setupWebView(RuskWindow *rusk)
 	if(buf.we_wordc == 1)
 	{
 		char *dbpath = realpath(buf.we_wordv[0], NULL);
-		webkit_cookie_manager_set_persistent_storage(cookieManager, dbpath, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
-		free(dbpath);
+		if(dbpath)
+		{
+			webkit_cookie_manager_set_persistent_storage(cookieManager, dbpath, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+			free(dbpath);
+		}else
+		{
+			webkit_cookie_manager_set_persistent_storage(cookieManager, buf.we_wordv[0], WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+		}
 	}else
 	{
 		return -1;
