@@ -589,8 +589,14 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
 
 	WebKitUserContentManager *manager = webkit_web_view_get_user_content_manager(rusk->webview);
-	addScriptByFileName(manager, SCRIPT_DOCUMENT_START, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START);
-	addScriptByFileName(manager, SCRIPT_DOCUMENT_END, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END);
+	if(addScriptByFileName(manager, SCRIPT_DOCUMENT_START, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START) < 0)
+	{
+		return -1;
+	}
+	if(addScriptByFileName(manager, SCRIPT_DOCUMENT_END, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END) < 0)
+	{
+		return -1;
+	}
 
 	return 0;
 }
