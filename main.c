@@ -575,6 +575,10 @@ int setupWebView(RuskWindow *rusk)
 
 	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
 
+	WebKitUserContentManager *manager = webkit_web_view_get_user_content_manager(rusk->webview);
+	WebKitUserScript *script = webkit_user_script_new("alert('user content manager test')", WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, NULL, NULL);
+	webkit_user_content_manager_add_script(manager, script);
+
 	return 0;
 }
 
@@ -622,7 +626,7 @@ int makeWindow(RuskWindow *rusk)
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->progressbar), FALSE, FALSE, 0);
 
-	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_user_content_manager(webkit_user_content_manager_new()));
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->webview), TRUE, TRUE, 0);
 
 	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(closeRusk), rusk);
