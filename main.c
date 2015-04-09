@@ -229,7 +229,7 @@ void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk
 	gtk_window_set_icon(rusk->window, pixbuf);
 }
 
-void onLinkHover(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
+void onMouseTargetChange(WebKitWebView *webview, WebKitHitTestResult *hitTest, guint modifiers, RuskWindow *rusk)
 {
 	if(webkit_hit_test_result_context_is_link(hitTest))
 	{
@@ -583,7 +583,7 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::estimated-load-progress", G_CALLBACK(onProgressChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "load-changed", G_CALLBACK(onLoadChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "notify::favicon", G_CALLBACK(onFaviconChange), rusk);
-	g_signal_connect(G_OBJECT(rusk->webview), "mouse-target-changed", G_CALLBACK(onLinkHover), rusk);
+	g_signal_connect(G_OBJECT(rusk->webview), "mouse-target-changed", G_CALLBACK(onMouseTargetChange), rusk);
 	g_signal_connect(G_OBJECT(rusk->webview), "create", G_CALLBACK(onRequestNewWindow), rusk);
 
 	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
