@@ -21,10 +21,10 @@ function onKeyPress(ev)
 		switch(ev.string)
 		{
 			case 'j':
-				window.scrollBy(0, -SCROLL_STEP);
+				window.scrollBy(0,  SCROLL_STEP);
 				break;
 			case 'k':
-				window.scrollBy(0,  SCROLL_STEP);
+				window.scrollBy(0, -SCROLL_STEP);
 				break;
 			case 'h':
 				window.scrollBy(-SCROLL_STEP, 0);
