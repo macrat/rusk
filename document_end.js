@@ -1,4 +1,4 @@
-var SCROLL_STEP = 12;
+var SCROLL_STEP = 24;
 var ZOOM_STEP = 0.1;
 
 
