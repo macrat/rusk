@@ -26,8 +26,6 @@
 #define SCRIPT_DOCUMENT_START		"./document_start.js"
 #define SCRIPT_DOCUMENT_END			"./document_end.js"
 
-#define ZOOM_STEP	0.1
-
 #define HOMEPAGE	"http://google.com/"
 
 #define BORDER_WIDTH	2
@@ -481,16 +479,6 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				{
 					webkit_web_view_reload(rusk->webview);
 				}
-				break;
-
-			case GDK_KEY_plus:
-				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)+ZOOM_STEP);
-				break;
-			case GDK_KEY_minus:
-				webkit_web_view_set_zoom_level(rusk->webview, webkit_web_view_get_zoom_level(rusk->webview)-ZOOM_STEP);
-				break;
-			case GDK_KEY_0:
-				webkit_web_view_set_zoom_level(rusk->webview, 1.0);
 				break;
 
 			case GDK_KEY_S:

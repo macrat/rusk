@@ -1,4 +1,18 @@
 var SCROLL_STEP = 12;
+var ZOOM_STEP = 0.1;
+
+
+function zoomSet(val)
+{
+	document.body.style.zoom = val;
+}
+
+
+function zoomTo(val)
+{
+	zoomSet(parseFloat(document.body.style.zoom || 1) + val);
+}
+
 
 function onKeyPress(ev)
 {
@@ -17,6 +31,16 @@ function onKeyPress(ev)
 				break;
 			case 'l':
 				window.scrollBy( SCROLL_STEP, 0);
+				break;
+
+			case 'plus':
+				zoomTo( ZOOM_STEP);
+				break;
+			case 'minus':
+				zoomTo(-ZOOM_STEP);
+				break;
+			case '0':
+				zoomSet(0);
 				break;
 		}
 	}
