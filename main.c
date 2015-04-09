@@ -454,9 +454,12 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	gboolean proceed = TRUE;
 
 	char *script = g_strdup_printf(
-			"onKeyPress({ctrlKey: %d, shiftKey: %d, string: '%s'})",
+			"onKeyPress({ctrlKey: %d, shiftKey: %d, superKey: %d, hyperKey: %d, metaKey: %d, string: '%s'})",
 			(key->state & GDK_CONTROL_MASK)?1:0,
 			(key->state & GDK_SHIFT_MASK)?1:0,
+			(key->state & GDK_SUPER_MASK)?1:0,
+			(key->state & GDK_HYPER_MASK)?1:0,
+			(key->state & GDK_META_MASK)?1:0,
 			gdk_keyval_name(key->keyval));
 	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
 	g_free(script);
