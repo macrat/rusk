@@ -515,7 +515,7 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	return proceed;
 }
 
-int addScriptByFileName(WebKitUserContentManager *contentManager, const char *scriptPath)
+int addScriptByFileName(WebKitUserContentManager *contentManager, const char *scriptPath, WebKitUserScriptInjectionTime InjectionTime)
 {
 	if(access(scriptPath, F_OK) != 0)
 	{
@@ -528,7 +528,7 @@ int addScriptByFileName(WebKitUserContentManager *contentManager, const char *sc
 			return -1;
 		}
 
-		WebKitUserScript *script = webkit_user_script_new(scriptStr, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, NULL, NULL);
+		WebKitUserScript *script = webkit_user_script_new(scriptStr, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, InjectionTime, NULL, NULL);
 
 		free(scriptStr);
 
@@ -589,8 +589,8 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
 
 	WebKitUserContentManager *manager = webkit_web_view_get_user_content_manager(rusk->webview);
-	addScriptByFileName(manager, SCRIPT_DOCUMENT_START);
-	addScriptByFileName(manager, SCRIPT_DOCUMENT_END);
+	addScriptByFileName(manager, SCRIPT_DOCUMENT_START, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START);
+	addScriptByFileName(manager, SCRIPT_DOCUMENT_END, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_END);
 
 	return 0;
 }
