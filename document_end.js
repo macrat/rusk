@@ -17,6 +17,7 @@ function onKeyPress(ev)
 				break;
 			case 'l':
 				window.scrollBy( SCROLL_STEP, 0);
+				break;
 		}
 	}
 }
