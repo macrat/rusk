@@ -23,6 +23,9 @@
 #define FAVICONDIR		"/mnt/tmpfs/"
 #define SAVEDEFAULTDIR	"/mnt/tmpfs/"
 
+#define SCRIPT_DOCUMENT_START		"./document_start.js"
+#define SCRIPT_DOCUMENT_END			"./document_end.js"
+
 #define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
@@ -57,6 +60,30 @@ RuskWindow* makeRusk();
 
 
 int g_ruskCounter = 0;
+
+
+char* loadFile(const char *fname)
+{
+	char buf[1024];
+
+	FILE *fp = fopen(fname, "r");
+
+	fseek(fp, 0, SEEK_END);
+	size_t resultSize = ftell(fp) + 1;
+	fseek(fp, 0, SEEK_SET);
+
+	char *result = malloc(sizeof(char) * resultSize);
+	memset(result, '\0', resultSize);
+
+	size_t read;
+	while((read = fread(buf, sizeof(char), sizeof(buf), fp)) > 0)
+	{
+		memcpy(result+ftell(fp)-read, buf, read);
+	}
+	fclose(fp);
+
+	return result;
+}
 
 
 void openURI(RuskWindow *rusk, const char *uri)
@@ -530,6 +557,34 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	return proceed;
 }
 
+int addScriptByFileName(WebKitUserContentManager *contentManager, const char *scriptPath)
+{
+	if(access(scriptPath, F_OK) != 0)
+	{
+		return 1;
+	}else
+	{
+		char *scriptStr = loadFile(scriptPath);
+		if(scriptStr == NULL)
+		{
+			return -1;
+		}
+
+		WebKitUserScript *script = webkit_user_script_new(scriptStr, WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, NULL, NULL);
+
+		free(scriptStr);
+
+		if(script == NULL)
+		{
+			return -1;
+		}
+
+		webkit_user_content_manager_add_script(contentManager, script);
+	}
+
+	return 0;
+}
+
 int setupWebView(RuskWindow *rusk)
 {
 	WebKitCookieManager *cookieManager;
@@ -576,8 +631,8 @@ int setupWebView(RuskWindow *rusk)
 	g_signal_connect(G_OBJECT(context), "download-started", G_CALLBACK(onDownloadStarted), rusk);
 
 	WebKitUserContentManager *manager = webkit_web_view_get_user_content_manager(rusk->webview);
-	WebKitUserScript *script = webkit_user_script_new("alert('user content manager test')", WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, NULL, NULL);
-	webkit_user_content_manager_add_script(manager, script);
+	addScriptByFileName(manager, SCRIPT_DOCUMENT_START);
+	addScriptByFileName(manager, SCRIPT_DOCUMENT_END);
 
 	return 0;
 }
