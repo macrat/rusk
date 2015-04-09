@@ -59,4 +59,3 @@ function onKeyPress(ev)
 		}
 	}
 }
-document.addEventListener("keypress", onKeyPress, false);
