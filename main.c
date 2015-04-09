@@ -465,22 +465,6 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 	{
 		switch(gdk_keyval_to_upper(key->keyval))
 		{
-			case GDK_KEY_B:
-				webkit_web_view_go_back(rusk->webview);
-				break;
-			case GDK_KEY_F:
-				webkit_web_view_go_forward(rusk->webview);
-				break;
-			case GDK_KEY_R:
-				if(key->state & GDK_SHIFT_MASK)
-				{
-					webkit_web_view_reload_bypass_cache(rusk->webview);
-				}else
-				{
-					webkit_web_view_reload(rusk->webview);
-				}
-				break;
-
 			case GDK_KEY_S:
 				inSiteSearchToggle(rusk);
 				break;

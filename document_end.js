@@ -20,6 +20,20 @@ function onKeyPress(ev)
 	{
 		switch(ev.string)
 		{
+			case 'f':
+				history.forward();
+				break;
+			case 'b':
+				history.back();
+				break;
+
+			case 'r':
+				location.reload(true);
+				break;
+			case 'R':
+				location.reload(false);
+				break;
+
 			case 'j':
 				window.scrollBy(0,  SCROLL_STEP);
 				break;
