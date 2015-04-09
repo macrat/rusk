@@ -26,7 +26,6 @@
 #define SCRIPT_DOCUMENT_START		"./document_start.js"
 #define SCRIPT_DOCUMENT_END			"./document_end.js"
 
-#define SCROLL_STEP	24
 #define ZOOM_STEP	0.1
 
 #define HOMEPAGE	"http://google.com/"
@@ -206,17 +205,6 @@ void onLoadChange(WebKitWebView *webview, WebKitLoadEvent event, RuskWindow *rus
 		default:
 			break;
 	}
-}
-
-void scroll(RuskWindow *rusk, const int vertical, const int horizonal)
-{
-	char *script;
-
-	script = g_strdup_printf("window.scrollBy(%d,%d)", horizonal, vertical);
-
-	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
-
-	g_free(script);
 }
 
 void onFaviconChange(WebKitWebView *webview, GParamSpec *param, RuskWindow *rusk)
@@ -467,6 +455,14 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 {
 	gboolean proceed = TRUE;
 
+	char *script = g_strdup_printf(
+			"onKeyPress({ctrlKey: %d, shiftKey: %d, string: '%s'})",
+			(key->state & GDK_CONTROL_MASK)?1:0,
+			(key->state & GDK_SHIFT_MASK)?1:0,
+			gdk_keyval_name(key->keyval));
+	webkit_web_view_run_javascript(rusk->webview, script, NULL, NULL, NULL);
+	g_free(script);
+
 	if(key->state & GDK_CONTROL_MASK)
 	{
 		switch(gdk_keyval_to_upper(key->keyval))
@@ -485,19 +481,6 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				{
 					webkit_web_view_reload(rusk->webview);
 				}
-				break;
-
-			case GDK_KEY_H:
-				scroll(rusk, 0, -SCROLL_STEP);
-				break;
-			case GDK_KEY_J:
-				scroll(rusk, SCROLL_STEP, 0);
-				break;
-			case GDK_KEY_K:
-				scroll(rusk, -SCROLL_STEP, 0);
-				break;
-			case GDK_KEY_L:
-				scroll(rusk, 0, SCROLL_STEP);
 				break;
 
 			case GDK_KEY_plus:
