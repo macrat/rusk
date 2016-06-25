@@ -7,10 +7,11 @@
 
 
 typedef struct {
-	gchar *uri;
-	gchar *dest;
+	gchar *uri, *dest;
+	WebKitDownload *download;
+	GtkBox *parent, *outer;
 	GtkProgressBar *progress;
-	GtkBox *buttonArea;
+	GtkButton *cancel, *close;
 } DownloadTask;
 
 
@@ -46,31 +47,52 @@ void onProgress(WebKitDownload *download, guint64 data_length, DownloadTask *tas
 
 void onFinished(WebKitDownload *download, DownloadTask *task)
 {
-	if(g_strcmp0(gtk_progress_bar_get_text(task->progress), "failed") != 0)
+	if(g_strcmp0(gtk_progress_bar_get_text(task->progress), "failed") != 0
+	&& g_strcmp0(gtk_progress_bar_get_text(task->progress), "canceled") != 0)
 	{
 		gtk_progress_bar_set_text(task->progress, "finished");
 		printf("finish\n");  // debug
 	}
+
+	gtk_widget_set_visible(GTK_WIDGET(task->cancel), FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(task->close), TRUE);
 }
 
 void onFailed(WebKitDownload *download, GError *error, DownloadTask *task)
 {
-	gtk_progress_bar_set_text(task->progress, "failed");
-	printf("failed: %d/%d\n", error->domain == WEBKIT_DOWNLOAD_ERROR, error->code);  // debug
+	if(g_strcmp0(gtk_progress_bar_get_text(task->progress), "canceled") != 0)
+	{
+		gtk_progress_bar_set_text(task->progress, "failed");
+		printf("failed: %d/%d\n", error->domain == WEBKIT_DOWNLOAD_ERROR, error->code);  // debug
+	}
+}
+
+void onCancelTask(GtkButton *button, DownloadTask *task)
+{
+	webkit_download_cancel(task->download);
+	gtk_progress_bar_set_text(task->progress, "canceled");
+}
+
+void onCloseTask(GtkButton *button, DownloadTask *task)
+{
+	gtk_container_remove(GTK_CONTAINER(task->parent), GTK_WIDGET(task->outer));
+	g_free(task->uri);
+	g_free(task->dest);
 }
 
 void addTaskView(GtkBox *parent, DownloadTask *task)
 {
-	GtkWidget *outer, *statusArea, *uri, *dest;
-	GtkWidget *testButton;
+	GtkWidget *statusArea, *uri, *dest;
+	GtkBox *buttonArea;
 	char *markup;
 
-	outer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	gtk_box_pack_start(parent, outer, FALSE, FALSE, 0);
+	task->parent = parent;
+	task->outer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
+	gtk_box_pack_start(parent, GTK_WIDGET(task->outer), FALSE, FALSE, 0);
 
 
 	statusArea = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_box_pack_start(GTK_BOX(outer), statusArea, TRUE, TRUE, 0);
+	gtk_box_pack_start(task->outer, statusArea, TRUE, TRUE, 0);
 
 	uri = gtk_label_new(NULL);
 	markup = g_markup_printf_escaped("<span size=\"large\">%s</span>", task->uri);
@@ -91,25 +113,30 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 	gtk_box_pack_start(GTK_BOX(statusArea), dest, FALSE, FALSE, 0);
 
 
-	task->buttonArea = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
-	gtk_box_pack_start(GTK_BOX(outer), GTK_WIDGET(task->buttonArea), FALSE, FALSE, 0);
+	buttonArea = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+	gtk_box_pack_start(task->outer, GTK_WIDGET(buttonArea), FALSE, FALSE, 0);
 
-	testButton = gtk_button_new_with_label("stop");
-	gtk_box_pack_end(task->buttonArea, testButton, FALSE, FALSE, 0);
+	task->cancel = GTK_BUTTON(gtk_button_new_with_label("cancel"));
+	gtk_box_pack_end(buttonArea, GTK_WIDGET(task->cancel), FALSE, FALSE, 0);
+	g_signal_connect(G_OBJECT(task->cancel), "clicked", G_CALLBACK(onCancelTask), task);
+
+	task->close = GTK_BUTTON(gtk_button_new_with_label("close"));
+	gtk_box_pack_end(buttonArea, GTK_WIDGET(task->close), FALSE, FALSE, 0);
+	g_signal_connect(G_OBJECT(task->close), "clicked", G_CALLBACK(onCloseTask), task);
 
 
-	gtk_widget_show_all(outer);
+	gtk_widget_show_all(GTK_WIDGET(task->outer));
+	gtk_widget_set_visible(GTK_WIDGET(task->close), FALSE);
 }
 
 void startTask(WebKitWebView *webview, DownloadTask *task)
 {
-	printf("%p, %p\n", task, task->progress);
-	WebKitDownload *download = webkit_web_view_download_uri(webview, task->uri);
+	task->download = webkit_web_view_download_uri(webview, task->uri);
 
-	g_signal_connect(G_OBJECT(download), "decide-destination", G_CALLBACK(onDecideDestination), task);
-	g_signal_connect(G_OBJECT(download), "received-data", G_CALLBACK(onProgress), task);
-	g_signal_connect(G_OBJECT(download), "finished", G_CALLBACK(onFinished), task);
-	g_signal_connect(G_OBJECT(download), "failed", G_CALLBACK(onFailed), task);
+	g_signal_connect(G_OBJECT(task->download), "decide-destination", G_CALLBACK(onDecideDestination), task);
+	g_signal_connect(G_OBJECT(task->download), "received-data", G_CALLBACK(onProgress), task);
+	g_signal_connect(G_OBJECT(task->download), "finished", G_CALLBACK(onFinished), task);
+	g_signal_connect(G_OBJECT(task->download), "failed", G_CALLBACK(onFailed), task);
 }
 
 int main(int argc, char **argv)
