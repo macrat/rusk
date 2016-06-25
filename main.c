@@ -406,6 +406,21 @@ RuskWindow* createNewWindow(RuskWindow *rusk)
 	return newRusk;
 }
 
+void toggleInspector(RuskWindow *rusk)
+{
+	g_object_set(G_OBJECT(webkit_web_view_get_settings(rusk->webview)), "enable-developer-extras", TRUE, NULL);
+
+	WebKitWebInspector *inspector = webkit_web_view_get_inspector(rusk->webview);
+
+	if(webkit_web_inspector_is_attached(inspector))
+	{
+		webkit_web_inspector_close(inspector);
+	}else
+	{
+		webkit_web_inspector_show(inspector);
+	}
+}
+
 GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 {
 	return GTK_WIDGET(makeRusk()->webview);
@@ -501,7 +516,13 @@ gboolean onKeyPress(GtkWidget *widget, GdkEventKey *key, RuskWindow *rusk)
 				globalSearchToggle(rusk, "maps");
 				break;
 			case GDK_KEY_I:
-				globalSearchToggle(rusk, "images");
+				if(key->state & GDK_SHIFT_MASK)
+				{
+					toggleInspector(rusk);
+				}else
+				{
+					globalSearchToggle(rusk, "images");
+				}
 				break;
 
 			default:
