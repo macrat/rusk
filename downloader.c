@@ -3,8 +3,6 @@
 #include <gtk/gtk.h>
 #include <webkit2/webkit2.h>
 
-#define TESTFILE "/mnt/tmpfs/test.txt"
-
 
 typedef struct {
 	gchar *uri, *dest;
@@ -141,20 +139,27 @@ void startTask(WebKitWebView *webview, DownloadTask *task)
 
 int main(int argc, char **argv)
 {
+	if(argc != 3)
+	{
+		fprintf(stderr, "$ %s [URI] [DESTNATION]\n", argv[0]);
+		return 1;
+	}
+
 	gtk_init(&argc, &argv);
 
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 	gtk_container_add(GTK_CONTAINER(window), box);
+	g_signal_connect(G_OBJECT(window), "destroy", gtk_main_quit, NULL);
 
 	gtk_widget_show_all(window);
 
 	WebKitWebView *webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
 	DownloadTask task = {
-		.uri= g_strdup("http://localhost:8790/"),
-		.dest= g_strdup(TESTFILE)
+		.uri= g_strdup(argv[1]),
+		.dest= g_strdup(argv[2])
 	};
 
 	printf("uri: %s\ndest: %s\n", task.uri, task.dest);

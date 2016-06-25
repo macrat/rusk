@@ -23,6 +23,8 @@
 #define FAVICONDIR		"/mnt/tmpfs/"
 #define SAVEDEFAULTDIR	"/mnt/tmpfs/"
 
+#define DOWNLOAD_COMMAND "./rusk-dl"
+
 #define SCRIPT_DOCUMENT_START		"./document_start.js"
 #define SCRIPT_DOCUMENT_END			"./document_end.js"
 
@@ -426,6 +428,14 @@ GtkWidget* onRequestNewWindow(WebKitWebView *webview, RuskWindow *rusk)
 	return GTK_WIDGET(makeRusk()->webview);
 }
 
+void startDownload(const char *uri, const char *dest)
+{
+	if(fork() == 0)
+	{
+		execlp(DOWNLOAD_COMMAND, DOWNLOAD_COMMAND, uri, dest, NULL);
+	}
+}
+
 gboolean decideDownloadDestination(WebKitDownload *download, const gchar *suggest, RuskWindow *rusk)
 {
 	GtkWidget *dialog;
@@ -450,6 +460,11 @@ gboolean decideDownloadDestination(WebKitDownload *download, const gchar *sugges
 		printf("download %s\n", webkit_uri_request_get_uri(webkit_download_get_request(download)));
 		printf("suggest: %s\n", suggest);
 		printf("save to: %s\n", filename);
+
+		startDownload(
+			webkit_uri_request_get_uri(webkit_download_get_request(download)),
+			filename
+		);
 
 		g_free(filename);
 	}
