@@ -14,35 +14,49 @@ typedef struct {
 } DownloadTask;
 
 
-gboolean decideDestination(WebKitDownload *download, const char *suggest, gpointer data)
+gboolean onDecideDestination(WebKitDownload *download, const char *suggest, DownloadTask *task)
 {
-	if(access(TESTFILE, F_OK) == 0)
+	if(access(task->dest, F_OK) == 0)
 	{
-		remove(TESTFILE);
+		remove(task->dest);
 	}
-	webkit_download_set_destination(download, "file://"TESTFILE);
 
-	printf("start\n");
-	return FALSE;
+	gchar *target = g_strdup_printf("file://%s", task->dest);
+	webkit_download_set_destination(download, target);
+	g_free(target);
+
+	printf("start\n");  // debug
+	return TRUE;
 }
 
-void progress(WebKitDownload *download, gpointer data)
+void onProgress(WebKitDownload *download, guint64 data_length, DownloadTask *task)
 {
 	const double progress = webkit_download_get_estimated_progress(download);
 	const double elapsed  = webkit_download_get_elapsed_time(download);
 	const double remain   = elapsed/progress - elapsed;
 
-	printf("progress: %.1lf%% [%.0lf sec][@ %.0lf sec]\n", progress*100, elapsed, remain);
+	gtk_progress_bar_set_fraction(task->progress, progress);
+
+	gchar *p_str = g_strdup_printf("%.1lf%% [%.0lf sec @ %.0lf sec]", progress*100, elapsed, remain);
+	gtk_progress_bar_set_text(task->progress, p_str);
+	g_free(p_str);
+
+	printf("progress: %.1lf%% [%.0lf sec @ %.0lf sec]\n", progress*100, elapsed, remain);  // debug
 }
 
-void finished(WebKitDownload *download, gpointer data)
+void onFinished(WebKitDownload *download, DownloadTask *task)
 {
-	printf("finish\n");
+	if(g_strcmp0(gtk_progress_bar_get_text(task->progress), "failed") != 0)
+	{
+		gtk_progress_bar_set_text(task->progress, "finished");
+		printf("finish\n");  // debug
+	}
 }
 
-void failed(WebKitDownload *download, gpointer error, gpointer data)
+void onFailed(WebKitDownload *download, GError *error, DownloadTask *task)
 {
-	printf("failed\n");
+	gtk_progress_bar_set_text(task->progress, "failed");
+	printf("failed: %d/%d\n", error->domain == WEBKIT_DOWNLOAD_ERROR, error->code);  // debug
 }
 
 void addTaskView(GtkBox *parent, DownloadTask *task)
@@ -69,8 +83,8 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 	gtk_box_pack_start(GTK_BOX(statusArea), GTK_WIDGET(task->progress), TRUE, TRUE, 0);
 	gtk_progress_bar_set_show_text(task->progress, TRUE);
 
-	gtk_progress_bar_set_fraction(task->progress, 0.25);  // debug
-	gtk_progress_bar_set_text(task->progress, "25% [12 sec @ 54 sec]");  // debug
+	gtk_progress_bar_set_fraction(task->progress, 0.0);
+	gtk_progress_bar_set_text(task->progress, "0%");
 
 	dest = gtk_link_button_new(task->dest);
 	gtk_widget_set_halign(dest, GTK_ALIGN_START);
@@ -82,44 +96,44 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 
 	testButton = gtk_button_new_with_label("stop");
 	gtk_box_pack_end(task->buttonArea, testButton, FALSE, FALSE, 0);
+
+
+	gtk_widget_show_all(outer);
+}
+
+void startTask(WebKitWebView *webview, DownloadTask *task)
+{
+	printf("%p, %p\n", task, task->progress);
+	WebKitDownload *download = webkit_web_view_download_uri(webview, task->uri);
+
+	g_signal_connect(G_OBJECT(download), "decide-destination", G_CALLBACK(onDecideDestination), task);
+	g_signal_connect(G_OBJECT(download), "received-data", G_CALLBACK(onProgress), task);
+	g_signal_connect(G_OBJECT(download), "finished", G_CALLBACK(onFinished), task);
+	g_signal_connect(G_OBJECT(download), "failed", G_CALLBACK(onFailed), task);
 }
 
 int main(int argc, char **argv)
 {
 	gtk_init(&argc, &argv);
 
-
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
 	gtk_container_add(GTK_CONTAINER(window), box);
 
-	DownloadTask task;
-
-	task.uri = g_strdup("test_file.txt");
-	task.dest = g_strdup("http://localhost:8790");
-	addTaskView(GTK_BOX(box), &task);
-
-	task.uri = g_strdup("this-is-test.txt");
-	task.dest = g_strdup("http://localhost:8790/path/to/file.txt");
-	addTaskView(GTK_BOX(box), &task);
-
 	gtk_widget_show_all(window);
 
+	WebKitWebView *webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
-/*
-	GtkWidget *webview;
-	WebKitDownload *download;
+	DownloadTask task = {
+		.uri= g_strdup("http://localhost:8790/"),
+		.dest= g_strdup(TESTFILE)
+	};
 
-	webview = webkit_web_view_new();
+	printf("uri: %s\ndest: %s\n", task.uri, task.dest);
 
-	download = webkit_web_view_download_uri(WEBKIT_WEB_VIEW(webview), "http://localhost:8790/");
-
-	g_signal_connect(G_OBJECT(download), "decide-destination", G_CALLBACK(decideDestination), NULL);
-	g_signal_connect(G_OBJECT(download), "notify::estimated-progress", G_CALLBACK(progress), NULL);
-	g_signal_connect(G_OBJECT(download), "finished", G_CALLBACK(finished), NULL);
-	g_signal_connect(G_OBJECT(download), "failed", G_CALLBACK(failed), NULL);
-*/
+	addTaskView(GTK_BOX(box), &task);
+	startTask(webview, &task);
 
 	gtk_main();
 }
