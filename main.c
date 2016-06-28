@@ -87,33 +87,20 @@ char* loadFile(const char *fname)
 
 void openURI(RuskWindow *rusk, const char *uri)
 {
-	char *realURI;
+	gchar *realURI;
 
-	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0 || strncmp(uri, "~/", 2) == 0)
+	if(uri[0] == '/' || strncmp(uri, "./", 2) == 0)
 	{
-		wordexp_t buf;
-
-		wordexp(uri, &buf, 0);
-		if(buf.we_wordc > 0)
-		{
-			char *filepath = realpath(buf.we_wordv[0], NULL);
-			realURI = g_strdup_printf("file://%s", filepath);
-			free(filepath);
-
-			for(int i=1; i<buf.we_wordc; i++)
-			{
-				RuskWindow *rusk = makeRusk(rusk);
-				char *filepath = realpath(buf.we_wordv[i], NULL);
-				char *windowuri = g_strdup_printf("file://%s", filepath);
-				free(filepath);
-				openURI(rusk, windowuri);
-				g_free(windowuri);
-			}
-		}else
-		{
-			realURI = g_strdup("");
-		}
-		wordfree(&buf);
+		char *filepath = realpath(uri, NULL);
+		realURI = g_strdup_printf("file://%s", filepath);
+		free(filepath);
+	}else if(strncmp(uri, "~/", 2) == 0)
+	{
+		gchar *path = g_strdup_printf("%s%s", g_get_home_dir(), uri+1);
+		char *real = realpath(path, NULL);
+		g_free(path);
+		realURI = g_strdup_printf("file://%s", real);
+		free(real);
 	}else if(strstr(uri, "://"))
 	{
 		realURI = g_strdup(uri);
@@ -770,14 +757,12 @@ int main(int argc, char **argv)
 
 	if(argc <= 1)
 	{
-		RuskWindow *rusk = makeRusk();
-		openURI(rusk, HOMEPAGE);
+		openURI(makeRusk(), HOMEPAGE);
 	}else
 	{
 		for(int i=1; i<argc; i++)
 		{
-			RuskWindow *rusk = makeRusk(rusk);
-			openURI(rusk, argv[i]);
+			openURI(makeRusk(), argv[i]);
 		}
 	}
 
