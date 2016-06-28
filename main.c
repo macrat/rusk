@@ -19,10 +19,6 @@
 #include <sqlite3.h>
 #include <wordexp.h>
 
-#define DATABASEPATH	"./rusk.db"
-#define FAVICONDIR		"/mnt/tmpfs/"
-#define SAVEDEFAULTDIR	"/mnt/tmpfs/"
-
 #define DOWNLOAD_COMMAND "./rusk-dl"
 
 #define SCRIPT_DOCUMENT_START		"./document_start.js"
@@ -59,6 +55,18 @@ RuskWindow* makeRusk();
 
 
 int g_ruskCounter = 0;
+
+
+gchar* getDatabasePath()
+{
+	return g_strdup_printf("%s/rusk.db", g_get_user_data_dir());
+}
+
+
+gchar* getFaviconDir()
+{
+	return g_strdup_printf("%s/rusk/", g_get_user_cache_dir());
+}
 
 
 char* loadFile(const char *fname)
@@ -434,7 +442,7 @@ gboolean decideDownloadDestination(WebKitDownload *download, const gchar *sugges
 
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
 
-	char *buf = g_strdup_printf(SAVEDEFAULTDIR"%s", suggest);
+	char *buf = g_strdup_printf("%s%s", g_get_home_dir(), suggest);
 	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), buf);
 	g_free(buf);
 
@@ -579,26 +587,13 @@ int setupWebView(RuskWindow *rusk)
 		return -1;
 	}
 
-	wordexp_t buf;
-	wordexp(DATABASEPATH, &buf, 0);
-	if(buf.we_wordc == 1)
-	{
-		char *dbpath = realpath(buf.we_wordv[0], NULL);
-		if(dbpath)
-		{
-			webkit_cookie_manager_set_persistent_storage(cookieManager, dbpath, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
-			free(dbpath);
-		}else
-		{
-			webkit_cookie_manager_set_persistent_storage(cookieManager, buf.we_wordv[0], WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
-		}
-	}else
-	{
-		return -1;
-	}
-	wordfree(&buf);
+	gchar *dbpath = getDatabasePath();
+	webkit_cookie_manager_set_persistent_storage(cookieManager, dbpath, WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+	g_free(dbpath);
 
-	webkit_web_context_set_favicon_database_directory(context, FAVICONDIR);
+	gchar *favdir = getFaviconDir();
+	webkit_web_context_set_favicon_database_directory(context, favdir);
+	g_free(favdir);
 
 	webkit_settings_set_user_agent_with_application_details(webkit_web_view_get_settings(rusk->webview), "rusk", VERSION);
 
@@ -689,25 +684,14 @@ int makeWindow(RuskWindow *rusk)
 
 int connectDataBase(RuskWindow *rusk)
 {
-	wordexp_t buf;
-	char *dbpath;
-
-	wordexp(DATABASEPATH, &buf, 0);
-	if(buf.we_wordc == 1)
-	{
-		dbpath = realpath(buf.we_wordv[0], NULL);
-	}else
-	{
-		return -1;
-	}
-	wordfree(&buf);
+	gchar *dbpath = getDatabasePath();
 
 	if(sqlite3_open(dbpath, &rusk->database.connection) != SQLITE_OK)
 	{
 		return -1;
 	}
 
-	free(dbpath);
+	g_free(dbpath);
 
 	char *error = NULL;
 	if(sqlite3_exec(rusk->database.connection, "create table if not exists rusk_history (date integer not null check(date > 0), uri text not null unique);", NULL, NULL, &error) != SQLITE_OK)
