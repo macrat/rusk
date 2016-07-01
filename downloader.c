@@ -15,18 +15,19 @@
 
 
 typedef struct {
-	gchar *uri, *dest;
-	WebKitDownload *download;
-	GtkBox *parent, *outer;
-	GtkProgressBar *progress;
-	GtkButton *cancel, *close;
-} DownloadTask;
-
-typedef struct {
 	GtkBox *box;
 	WebKitWebView *webview;
 	int sock_fd;
 } RuskDL;
+
+typedef struct {
+	gchar *uri, *dest;
+	WebKitDownload *download;
+	RuskDL *downloader;
+	GtkBox *outer;
+	GtkProgressBar *progress;
+	GtkButton *cancel, *close;
+} DownloadTask;
 
 
 char *getPipePath(char *buf, const size_t len)
@@ -93,22 +94,35 @@ void onCancelTask(GtkButton *button, DownloadTask *task)
 	gtk_progress_bar_set_text(task->progress, "canceled");
 }
 
-void onCloseTask(GtkButton *button, DownloadTask *task)
+void closeWindow(GtkWidget *widget, RuskDL *dl)
 {
-	gtk_container_remove(GTK_CONTAINER(task->parent), GTK_WIDGET(task->outer));
-	g_free(task->uri);
-	g_free(task->dest);
+	char buf[PATH_MAX];
+	remove(getPipePath(buf, sizeof(buf)));
+
+	gtk_main_quit();
 }
 
-void addTaskView(GtkBox *parent, DownloadTask *task)
+void onCloseTask(GtkButton *button, DownloadTask *task)
+{
+	gtk_container_remove(GTK_CONTAINER(task->downloader->box), GTK_WIDGET(task->outer));
+	g_free(task->uri);
+	g_free(task->dest);
+
+	if(g_list_length(gtk_container_get_children(GTK_CONTAINER(task->downloader->box))) == 0)
+	{
+		closeWindow(NULL, task->downloader);
+	}
+}
+
+void addTaskView(RuskDL *downloader, DownloadTask *task)
 {
 	GtkWidget *statusArea, *uri, *dest;
 	GtkBox *buttonArea;
 	char *markup;
 
-	task->parent = parent;
+	task->downloader = downloader;
 	task->outer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
-	gtk_box_pack_start(task->parent, GTK_WIDGET(task->outer), FALSE, FALSE, 0);
+	gtk_box_pack_start(task->downloader->box, GTK_WIDGET(task->outer), FALSE, FALSE, 0);
 
 
 	statusArea = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -159,14 +173,6 @@ void startDownload(WebKitWebView *webview, DownloadTask *task)
 	g_signal_connect(G_OBJECT(task->download), "failed", G_CALLBACK(onFailed), task);
 }
 
-void closeWindow(GtkWidget *widget, RuskDL *dl)
-{
-	char buf[PATH_MAX];
-	remove(getPipePath(buf, sizeof(buf)));
-
-	gtk_main_quit();
-}
-
 RuskDL *makeWindow()
 {
 	RuskDL *dl = (RuskDL *)malloc(sizeof(RuskDL));
@@ -191,7 +197,7 @@ void startTask(RuskDL *dl, gchar *uri, gchar *dest)
 	task->uri = uri;
 	task->dest = dest;
 
-	addTaskView(dl->box, task);
+	addTaskView(dl, task);
 	startDownload(dl->webview, task);
 }
 
