@@ -186,7 +186,16 @@ RuskDL *makeWindow()
 
 	gtk_widget_show_all(window);
 
-	dl->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+	dl->webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(webkit_website_data_manager_new(
+		"base-cache-directory", g_strdup_printf("%s/rusk", g_get_user_cache_dir()),
+		"disk-cache-directory", g_strdup_printf("%s/rusk", g_get_user_cache_dir()),
+		"base-data-directory", g_strdup_printf("%s/rusk/data", g_get_user_data_dir()),
+		"indexeddb-directory", g_strdup_printf("%s/rusk/indexed", g_get_user_data_dir()),
+		"local-storage-directory", g_strdup_printf("%s/rusk/local-storage", g_get_user_data_dir()),
+		"offline-application-cache-directory", g_strdup_printf("%s/rusk/offline-apps", g_get_user_data_dir()),
+		"websql-directory", g_strdup_printf("%s/rusk/websql", g_get_user_data_dir()),
+		NULL
+	))));
 
 	return dl;
 }

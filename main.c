@@ -59,7 +59,7 @@ int g_ruskCounter = 0;
 
 gchar* getDatabasePath()
 {
-	return g_strdup_printf("%s/rusk.db", g_get_user_data_dir());
+	return g_strdup_printf("%s/rusk/rusk.db", g_get_user_data_dir());
 }
 
 
@@ -663,7 +663,16 @@ int makeWindow(RuskWindow *rusk)
 	rusk->progressbar = GTK_PROGRESS_BAR(gtk_progress_bar_new());
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->progressbar), FALSE, FALSE, 0);
 
-	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_user_content_manager(webkit_user_content_manager_new()));
+	rusk->webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(webkit_web_context_new_with_website_data_manager(webkit_website_data_manager_new(
+		"base-cache-directory", g_strdup_printf("%s/rusk", g_get_user_cache_dir()),
+		"disk-cache-directory", g_strdup_printf("%s/rusk", g_get_user_cache_dir()),
+		"base-data-directory", g_strdup_printf("%s/rusk/data", g_get_user_data_dir()),
+		"indexeddb-directory", g_strdup_printf("%s/rusk/indexed", g_get_user_data_dir()),
+		"local-storage-directory", g_strdup_printf("%s/rusk/local-storage", g_get_user_data_dir()),
+		"offline-application-cache-directory", g_strdup_printf("%s/rusk/offline-apps", g_get_user_data_dir()),
+		"websql-directory", g_strdup_printf("%s/rusk/websql", g_get_user_data_dir()),
+		NULL
+	))));
 	gtk_box_pack_start(GTK_BOX(box), GTK_WIDGET(rusk->webview), TRUE, TRUE, 0);
 
 	g_signal_connect(G_OBJECT(rusk->window), "destroy", G_CALLBACK(closeRusk), rusk);
