@@ -1,6 +1,4 @@
-syntax: glob
 .*.swp
 *.o
 rusk
 rusk-dl
-rusk.db
