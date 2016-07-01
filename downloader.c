@@ -1,7 +1,17 @@
-#include <stdio.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <gtk/gtk.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <webkit2/webkit2.h>
+
+#ifdef __linux__
+#include <linux/limits.h>
+#endif
 
 
 typedef struct {
@@ -12,6 +22,18 @@ typedef struct {
 	GtkButton *cancel, *close;
 } DownloadTask;
 
+typedef struct {
+	GtkBox *box;
+	WebKitWebView *webview;
+	int sock_fd;
+} RuskDL;
+
+
+char *getPipePath(char *buf, const size_t len)
+{
+	snprintf(buf, len, "%s/rusk/dl.pipe", g_get_user_cache_dir());
+	return buf;
+}
 
 gboolean onDecideDestination(WebKitDownload *download, const char *suggest, DownloadTask *task)
 {
@@ -86,7 +108,7 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 
 	task->parent = parent;
 	task->outer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
-	gtk_box_pack_start(parent, GTK_WIDGET(task->outer), FALSE, FALSE, 0);
+	gtk_box_pack_start(task->parent, GTK_WIDGET(task->outer), FALSE, FALSE, 0);
 
 
 	statusArea = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -127,7 +149,7 @@ void addTaskView(GtkBox *parent, DownloadTask *task)
 	gtk_widget_set_visible(GTK_WIDGET(task->close), FALSE);
 }
 
-void startTask(WebKitWebView *webview, DownloadTask *task)
+void startDownload(WebKitWebView *webview, DownloadTask *task)
 {
 	task->download = webkit_web_view_download_uri(webview, task->uri);
 
@@ -135,6 +157,83 @@ void startTask(WebKitWebView *webview, DownloadTask *task)
 	g_signal_connect(G_OBJECT(task->download), "received-data", G_CALLBACK(onProgress), task);
 	g_signal_connect(G_OBJECT(task->download), "finished", G_CALLBACK(onFinished), task);
 	g_signal_connect(G_OBJECT(task->download), "failed", G_CALLBACK(onFailed), task);
+}
+
+void closeWindow(GtkWidget *widget, RuskDL *dl)
+{
+	char buf[PATH_MAX];
+	remove(getPipePath(buf, sizeof(buf)));
+
+	gtk_main_quit();
+}
+
+RuskDL *makeWindow()
+{
+	RuskDL *dl = (RuskDL *)malloc(sizeof(RuskDL));
+
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+	dl->box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 5));
+	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(dl->box));
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(closeWindow), dl);
+
+	gtk_widget_show_all(window);
+
+	dl->webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+
+	return dl;
+}
+
+void startTask(RuskDL *dl, gchar *uri, gchar *dest)
+{
+	DownloadTask *task = (DownloadTask *)malloc(sizeof(DownloadTask));
+	task->uri = uri;
+	task->dest = dest;
+
+	addTaskView(dl->box, task);
+	startDownload(dl->webview, task);
+}
+
+gboolean onRequest(GIOChannel *source, GIOCondition condition, RuskDL *dl)
+{
+	gchar *uri, *dest;
+
+	if(g_io_channel_read_line(source, &uri, NULL, NULL, NULL) != G_IO_STATUS_NORMAL)
+	{
+		fprintf(stderr, "failed read.\n");
+		return false;
+	}
+
+	if(g_io_channel_read_line(source, &dest, NULL, NULL, NULL) != G_IO_STATUS_NORMAL)
+	{
+		g_free(uri);
+		fprintf(stderr, "failed read.\n");
+		return false;
+	}
+
+	startTask(dl, uri, dest);
+
+	g_io_add_watch(source, G_IO_IN, (GIOFunc)onRequest, dl);
+	return false;
+}
+
+bool requestDownload(char *uri, char *dest)
+{
+	char path[PATH_MAX];
+	int fd = open(getPipePath(path, sizeof(path)), O_WRONLY);
+
+	if(fd < 0)
+	{
+		return false;
+	}
+
+	write(fd, uri, strlen(uri)+1);
+	write(fd, dest, strlen(dest)+1);
+
+	close(fd);
+
+	return true;
 }
 
 int main(int argc, char **argv)
@@ -145,27 +244,31 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	gtk_init(&argc, &argv);
+	if(!requestDownload(argv[1], argv[2]))
+	{
+		char path[PATH_MAX];
 
-	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-	gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-	gtk_container_add(GTK_CONTAINER(window), box);
-	g_signal_connect(G_OBJECT(window), "destroy", gtk_main_quit, NULL);
+		remove(getPipePath(path, sizeof(path)));
+		mkfifo(path, 0600);
 
-	gtk_widget_show_all(window);
+		int fd = open(path, O_RDONLY | O_NONBLOCK);
+		if(fd < 0)
+		{
+			perror("open");
+			return -1;
+		}
 
-	WebKitWebView *webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+		gtk_init(&argc, &argv);
 
-	DownloadTask task = {
-		.uri= g_strdup(argv[1]),
-		.dest= g_strdup(argv[2])
-	};
+		RuskDL *dl = makeWindow();
+		dl->sock_fd = fd;
 
-	printf("uri: %s\ndest: %s\n", task.uri, task.dest);
+		startTask(dl, g_strdup(argv[1]), g_strdup(argv[2]));
 
-	addTaskView(GTK_BOX(box), &task);
-	startTask(webview, &task);
+		GIOChannel *channel = g_io_channel_unix_new(fd);
+		g_io_channel_set_line_term(channel, g_strdup("\0"), 1);
+		g_io_add_watch(channel, G_IO_IN, (GIOFunc)onRequest, dl);
 
-	gtk_main();
+		gtk_main();
+	}
 }
